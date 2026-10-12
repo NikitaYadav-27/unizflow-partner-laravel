@@ -1,19 +1,15 @@
-# --------------------------------------------------
-# Laravel Standard Ignores
-# --------------------------------------------------
+  --------------------------------------------------
 /vendor/
 /node_modules/
 npm-debug.log
 yarn-error.log
 
-# Environment Files (Crucial: Prevents sensitive keys & DB credentials leak)
-.env
+  .env
 .env.backup
 .env.production
 .env.*.local
 .env.local
 
-# Laravel Storage & Cache
 /storage/*.key
 /storage/app/*
 !/storage/app/.gitignore
@@ -34,18 +30,12 @@ yarn-error.log
 !/storage/logs/.gitignore
 /storage/pail
 
-# Public Assets / Builds
-/public/build/
-/public/hot
-/public/storage
 
-# Package Manager & Build Caches
 /auth.json
 .phpunit.result.cache
 /.phpunit.cache/
 /.phpactor.json
 
-# IDEs & System Files
 .DS_Store
 Thumbs.db
 ehthumbs.db
@@ -58,13 +48,10 @@ Desktop.ini
 *.sublime-project
 *.sublime-workspace
 
-# Local Server Configs
 Homestead.json
 Homestead.yaml
 
-# Local Temporary / Migration / Fix Scripts
 fix_*.php
 convert_models.php
 
-# Log files
 *.log
