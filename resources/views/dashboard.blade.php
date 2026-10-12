@@ -552,28 +552,25 @@ $.get("/api/dashboard/analytics", {}, (data) => {
           {
               if(browser == "Chrome")
               {
-                  return "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Google_Chrome_icon_%28February_2022%29.svg/1200px-Google_Chrome_icon_%28February_2022%29.svg.png";
+                  return "https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.0.0/chrome/chrome.png";
               }
               
               if(browser == "Firefox")
               {
-                  return "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Firefox_logo%2C_2019.svg/512px-Firefox_logo%2C_2019.svg.png";
+                  return "https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.0.0/firefox/firefox.png";
               }
               
               if(browser == "Safari")
               {
-                  return "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Safari_browser_logo.svg/2057px-Safari_browser_logo.svg.png";
+                  return "https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.0.0/safari/safari.png";
               }
               
-              if(browser == "MSIE")
+              if(browser == "MSIE" || browser == "Edge")
               {
-                  return "https://upload.wikimedia.org/wikipedia/commons/7/7e/Microsoft_Edge_logo_%282019%29.png";
+                  return "https://cdnjs.cloudflare.com/ajax/libs/browser-logos/74.0.0/edge/edge.png";
               }
               
-              if(browser == "Unknown Browser")
-              {
-                  return "https://cdn-icons-png.flaticon.com/512/5045/5045810.png";
-              }
+              return "https://cdn-icons-png.flaticon.com/512/5045/5045810.png";
           }
 
     function hideShowBalance(icon,walletId) {

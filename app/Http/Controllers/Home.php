@@ -652,7 +652,6 @@ class Home extends Controller
             ], 400);
         }
 
-        //check remark length should not exceed 100 characters
         if (strlen($remarks) > 100) {
             return response()->json([
                 'status' => 'error',
@@ -664,7 +663,6 @@ class Home extends Controller
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
         
-        //check for transaction limit exceed
         $transaction = new \App\Models\Transaction();
         $start = date('Y-m-d') . ' 00:00:00';
         $end   = date('Y-m-d') . ' 23:59:59';
@@ -685,7 +683,6 @@ class Home extends Controller
             ], 400);
         }
         
-        //check for pipe limit
         $provider = (new \App\Models\Provider())->where("id",$loggedInUser['payin_provider'])->first();
         if($provider['used_limit'] > $provider['daily_limit']){
             return response()->json([
@@ -751,17 +748,13 @@ class Home extends Controller
         
 
         if(!$tresult) {
-            //log failed response
-            $builder = \Illuminate\Support\Facades\DB::table('error_logs');
-            $builder->create([
+            \Illuminate\Support\Facades\DB::table('error_logs')->insert([
                 'type' => 'PAYIN',
                 'txnid' => $txnId,
                 'log' => json_encode($result),
                 'provider' => $loggedInUser['payin_provider'],
                 'request' => json_encode($provider->getRequest())
-                
             ]);
-            //log end
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unable to generate UPI QR code'
