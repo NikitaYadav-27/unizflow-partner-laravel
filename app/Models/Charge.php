@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+
+
+class Charge extends Model
+{
+    public function payin(float $amount, int $packageId, int $providerId)
+    {
+        $db = \Illuminate\Support\Facades\DB::connection();
+
+        $packageSlab = $db->table('package_slabs')
+            ->where('service', 'payin')
+            ->where('package_id', $packageId)
+            ->where('min_amount', '<=', $amount)
+            ->where('max_amount', '>=', $amount)
+            ->first();
+
+        if (!$packageSlab) {
+            return false;
+        }
+
+        $chargeValue = $packageSlab->percent ? ($packageSlab->amount * $amount) / 100 : $packageSlab->amount;
+        $chargeGST = $packageSlab->gst ? ($chargeValue * 18) / 100 : 0;
+        return [
+            'charge' => $chargeValue,
+            'charge_gst' => $chargeGST
+        ];
+    }
+    
+    public function payout(float $amount, int $packageId, int $providerId)
+    {
+        $db = \Illuminate\Support\Facades\DB::connection();
+
+        $packageSlab = $db->table('package_slabs')
+            ->where('service', 'payout')
+            ->where('package_id', $packageId)
+            ->where('min_amount', '<=', $amount)
+            ->where('max_amount', '>=', $amount)
+            ->first();
+
+        if (!$packageSlab) {
+            return false;
+        }
+
+        $chargeValue = $packageSlab->percent ? ($packageSlab->amount * $amount) / 100 : $packageSlab->amount;
+        $chargeGST = $packageSlab->gst ? ($chargeValue * 18) / 100 : 0;
+        return [
+            'charge' => $chargeValue,
+            'charge_gst' => $chargeGST
+        ];
+    }
+}

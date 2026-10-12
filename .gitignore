@@ -1,0 +1,70 @@
+# --------------------------------------------------
+# Laravel Standard Ignores
+# --------------------------------------------------
+/vendor/
+/node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment Files (Crucial: Prevents sensitive keys & DB credentials leak)
+.env
+.env.backup
+.env.production
+.env.*.local
+.env.local
+
+# Laravel Storage & Cache
+/storage/*.key
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/public/
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
+/storage/pail
+
+# Public Assets / Builds
+/public/build/
+/public/hot
+/public/storage
+
+# Package Manager & Build Caches
+/auth.json
+.phpunit.result.cache
+/.phpunit.cache/
+/.phpactor.json
+
+# IDEs & System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+/.idea/
+/.vscode/
+/.fleet/
+/.nova/
+/.zed/
+*.sublime-project
+*.sublime-workspace
+
+# Local Server Configs
+Homestead.json
+Homestead.yaml
+
+# Local Temporary / Migration / Fix Scripts
+fix_*.php
+convert_models.php
+
+# Log files
+*.log
