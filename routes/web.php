@@ -60,8 +60,10 @@ Route::get('/payment/{any}',[Payment::class, 'link']);
 Route::post('/api/transactions/check-status',[Payment::class, 'status']);
 Route::get('/api/regenerate-api-key/send-otp',[Home::class, 'regenerate_api_key_send_otp']);
 Route::post('/api/regenerate-api-key/verify-otp',[Home::class, 'verify_otp_and_update_api_key']);
-Route::post('/api/update-webhook/{any}',[Home::class, 'update_webhook_send_otp']);
-Route::post('/api/update-webhook-verify',[Home::class, 'verify_otp_and_update_webhook_url']);
+Route::match(['get', 'post'], '/api/update-webhook/payin', [Home::class, 'update_webhook_send_otp'])->defaults('type', 'payin');
+Route::match(['get', 'post'], '/api/update-webhook/payout', [Home::class, 'update_webhook_send_otp'])->defaults('type', 'payout');
+Route::match(['get', 'post'], '/api/update-webhook/{type}', [Home::class, 'update_webhook_send_otp']);
+Route::match(['get', 'post'], '/api/update-webhook-verify', [Home::class, 'verify_otp_and_update_webhook_url']);
 Route::post('/api/whitelist-ip',[Home::class, 'whitelist_ip_send_otp']);
 Route::post('/api/update-ip-verify',[Home::class, 'verify_otp_and_add_ip']);
 Route::post('/api/delete/ip',[Home::class, 'delete_ip_send_otp']);
@@ -73,6 +75,7 @@ Route::get('/service/collection/settlements/{any}',[Home::class, 'settlement_tra
 Route::get('/api/user/login/history',[Home::class, 'get_login_history']);
 Route::get('/reports/download',[Home::class, 'reports_download']);
 Route::get('/api/export/report/download',[Home::class, 'download']);
+Route::get('/api/export/wallet-ledger',[Home::class, 'export_wallet_ledger']);
 Route::post('/api/admin/chargeback/actions/add',[Home::class, 'add_chargeback_action']);
 Route::post('/api/admin/user/profile/update-bank',[Home::class, 'update_bank_details']);
 Route::get('/api-docs',[Home::class, 'api_docs']);
@@ -91,10 +94,10 @@ Route::get('/api/v1/settlements/internal/settlements-t-19-02',[Settlement::class
 Route::get('/api/v1/operations/internal/cron',[Cron::class, 'index']);
 
 //CALLBACK
-Route::get('/api/v1/cb/internal/payin/solitpay/webhook',[Callback::class, 'solitpay_payin']);
-Route::get('/api/v1/cb/internal/payout/solitpay/webhook',[Callback::class, 'solitpay_payout']);
+Route::match(['get', 'post'], '/api/v1/cb/internal/payin/solitpay/webhook', [Callback::class, 'solitpay_payin']);
+Route::match(['get', 'post'], '/api/v1/cb/internal/payout/solitpay/webhook', [Callback::class, 'solitpay_payout']);
 
-Route::get('/api/v1/cb/internal/payin/zenova/webhook',[Callback::class, 'zenova_payin']);
-Route::get('/api/v1/cb/internal/payout/zenova/webhook',[Callback::class, 'zenova_payout']);
+Route::match(['get', 'post'], '/api/v1/cb/internal/payin/zenova/webhook', [Callback::class, 'zenova_payin']);
+Route::match(['get', 'post'], '/api/v1/cb/internal/payout/zenova/webhook', [Callback::class, 'zenova_payout']);
 
 Route::get('generate-token', [Api::class, 'testToken']);

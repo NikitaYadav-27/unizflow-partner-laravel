@@ -1672,56 +1672,20 @@ class Api extends Controller
         $status = "Pending";
         $utr = "";
         $referenceId = "";
-        $response = [];
 
-        // Provider call
-        if ($this->user['payout_provider'] == 2) {
-            $provider = new \App\Libraries\Solitpay();
-            $response = $provider->makePayout($txnId, $data->name, $data->phone, $data->amount, $data->account_number, $data->ifsc_code);
-            if (isset($response->status) && strtolower($response->status) == "success") {
-                $status = "Processing";
-                $referenceId = $response->data->transaction->txnid ?? "";
-                $utr = $response->data->transaction->utr ?? "";
-            }
-        } 
-        elseif ($this->user['payout_provider'] == 4) {
-            $provider = new \App\Libraries\Zenova();
-            $response = $provider->makePayout(
-                $data->memberid,
-                $data->txnpwd,
-                $data->mobile,
-                $data->account_holder_name,
-                $data->account_no,
-                $data->ifsc,
-                $data->amount,
-                $data->txnID
-            );
-            
-            if (isset($response->isSuccess) && $response->isSuccess == true) {
-                $status = $response->status;
-                $referenceId = $data->txnID;
-            } else {
-                return $this->respond([
-                    'status' => 'error',
-                    'error' => true,
-                    'message' => 'Zenova Error: ' . ($response->message ?? 'Unknown error'),
-                    'response' => $response
-                ], 400);
-            }
-        }
 
-        // Insert Transaction
+        
         $transaction = new \App\Models\Transaction();
         $transaction->create([
             'user_id' => $this->user['id'],
             'service' => 'payout',
             'txnid' => $txnId,
-            'reference_id' => $referenceId,
-            'status' => $status,
-            'name' => $this->user['payout_provider'] == 4 ? $data->account_holder_name : $data->name,
-            'phone' => $this->user['payout_provider'] == 4 ? $data->mobile : $data->phone,
-            'account_number' => $this->user['payout_provider'] == 4 ? $data->account_no : $data->account_number,
-            'ifsc_code' => $this->user['payout_provider'] == 4 ? $data->ifsc : $data->ifsc_code,
+            'reference_id' => '',
+            'status' => 'Pending',
+            'name' => $this->user['payout_provider'] == 4 ? ($data->account_holder_name ?? $data->name ?? '') : ($data->name ?? ''),
+            'phone' => $this->user['payout_provider'] == 4 ? ($data->mobile ?? $data->phone ?? '') : ($data->phone ?? ''),
+            'account_number' => $this->user['payout_provider'] == 4 ? ($data->account_no ?? $data->account_number ?? '') : ($data->account_number ?? ''),
+            'ifsc_code' => $this->user['payout_provider'] == 4 ? ($data->ifsc ?? $data->ifsc_code ?? '') : ($data->ifsc_code ?? ''),
             'bank_name' => $bankName,
             'amount' => number_format($data->amount, 2, '.', ''),
             'charges' => number_format($charge['charge'], 2, '.', ''),
@@ -1733,22 +1697,16 @@ class Api extends Controller
             'merchant_txnid' => $merchantTxnId
         ]);
 
-        // Log Raw Request/Response
-        $tr_response = new \App\Models\Transactionres();
-        $tr_response->create(["txnid" => $txnId, "type" => "request", "data" => json_encode($provider->getRequest())]);
-        $tr_response->create(["txnid" => $txnId, "type" => "creation", "data" => json_encode($response)]);
-
-        // Final API Response
         return $this->respond([
             'status' => 'success',
             'error' => false,
             'message' => 'Payout request initialized successfully!',
             'data' => [
                 "transaction" => [
-                    "txnStatus" => $status,
+                    "txnStatus" => "Pending",
                     "txnid" => $txnId,
                     "txnReference" => $merchantTxnId,
-                    "utr" => $utr ?: "NA"
+                    "utr" => "NA"
                 ],
                 "commercials" => [
                     "amount" => $data->amount,

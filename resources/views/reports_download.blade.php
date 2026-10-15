@@ -34,7 +34,8 @@
                 <label class="mb-1">Report Type <span class="text-primary">*</span></label>
                 <select class="form-control" id="reportType">
                     <option value="transactions">Transactions</option>
-                    <!--<option value="settlements">Settlements</option>-->
+                    <option value="settlements">Settlements</option>
+                    <option value="wallet">Wallet Ledger</option>
                 </select>
               </div>
             </div>

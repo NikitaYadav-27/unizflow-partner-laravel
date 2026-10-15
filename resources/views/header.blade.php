@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html style="--primary-rgb: {!! env("colors.primary.rgb"); !!}; --menu-prime-color: black;" lang="en" dir="ltr" data-nav-layout="verticle"
-    data-theme-mode="light" data-header-styles="light" data-menu-styles="light" data-nav-style="menu-click" loader="enable">
+<html style="--primary-rgb: {!! env("colors.primary.rgb"); !!}; --menu-prime-color: black;" lang="en" dir="ltr" data-nav-layout="vertical" data-vertical-style="overlay"
+    data-theme-mode="light" data-header-styles="light" data-menu-styles="light" loader="enable">
 
 <head>
 
@@ -103,6 +103,34 @@
           margin-block: 0px !important;
         }
 
+        .app-sidebar .slide.has-sub.open > .slide-menu {
+            display: block;
+        }
+
+        [data-vertical-style=overlay][data-toggled=icon-overlay-close]:not([data-icon-overlay=open]) .app-sidebar .slide.has-sub.open > .slide-menu {
+            display: none !important;
+        }
+
+        .app-sidebar {
+            background: #ffffff !important;
+            border-inline-end: 1px solid #e1e9e8 !important;
+        }
+
+        .app-sidebar .main-sidebar-header {
+            background: #ffffff !important;
+            border-block-end: 1px solid #e1e9e8 !important;
+            border-inline-end: 1px solid #e1e9e8 !important;
+        }
+
+        .main-sidebar {
+            background: #ffffff !important;
+        }
+
+        [data-vertical-style=overlay][data-toggled=icon-overlay-close][data-icon-overlay=open] .app-sidebar {
+            background: #ffffff !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        }
+
         #sidebar-scroll{
             overflow-y: scroll !important;
         }
@@ -119,12 +147,11 @@
             cursor: pointer;
         }
         
-         @media (max-width: 991.98px) {
-    .main-sidebar {
-    
-        background: white !important;
-    }
-}
+        @media (max-width: 991.98px) {
+            .main-sidebar {
+                background: white !important;
+            }
+        }
     </style>
 
     <!--Loader -->
@@ -242,10 +269,10 @@
         </header>
         <!-- /app-header -->
         <!-- Start::app-sidebar -->
-        <aside class="app-sidebar sticky bg-primary-transparent" id="sidebar">
+        <aside class="app-sidebar sticky" id="sidebar">
 
             <!-- Start::main-sidebar-header -->
-            <div class="main-sidebar-header" style="background: transparent;">
+            <div class="main-sidebar-header">
                 <div class="d-flex gap-2 justify-content-center align-items-center">
                     <a href="/" class="header-logo">
                         <img src="{!! env("logo"); !!}" alt="logo" style="height: 50px;" class="desktop-logo">
@@ -307,7 +334,7 @@
                                 <span class="side-menu__label">Payin</span>
                                 <i class="fe fe-chevron-right side-menu__angle"></i>
                             </a>
-                            <ul class="slide-menu child1" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(119.5px, 173.5px, 0px);">
+                            <ul class="slide-menu child1">
                                
                                 <li class="slide"><a onclick="navigate('/service/collection/upi'); activeNavigation(this);" class="side-menu__item {!! $page == "upi"?"active":"" !!}"><i class="ti ti-qrcode mx-2"></i> Generate QR</a></li>
                 
@@ -325,7 +352,7 @@
                                 <span class="side-menu__label">Payout</span>
                                 <i class="fe fe-chevron-right side-menu__angle"></i>
                             </a>
-                            <ul class="slide-menu child1" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(119.5px, 173.5px, 0px);">
+                            <ul class="slide-menu child1">
                                
                                 <li class="slide"><a onclick="navigate('/service/payout/create'); activeNavigation(this);" class="side-menu__item {!! $page == "payout"?"active":"" !!}"><i class="ti ti-arrow-up-right mx-2"></i> Make Payout</a></li>
                                 <li class="slide"><a onclick="navigate('/service/payout/transactions'); activeNavigation(this);" class="side-menu__item {!! $page == "payout-transactions"?"active":"" !!}"><i class="ti ti-history mx-2"></i>Payout History</a></li>
@@ -344,7 +371,7 @@
                                 <span class="side-menu__label">Wallet</span>
                                 <i class="fe fe-chevron-right side-menu__angle"></i>
                             </a>
-                            <ul class="slide-menu child1" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(119.5px, 173.5px, 0px);">
+                            <ul class="slide-menu child1">
                             
                                 <li class="slide"><a onclick="navigate('/wallet/ledger'); activeNavigation(this);" class="side-menu__item {!! $page == "ledger"?"active":"" !!}"><i class="ti ti-file-text mx-2"></i>Wallet Ledger</a></li>
                                 <li class="slide"><a onclick="navigate('/wallet/topup'); activeNavigation(this);" class="side-menu__item {!! $page == "topup"?"active":"" !!}"><i class="ti ti-circle-plus mx-2"></i>Wallet Topup</a></li>
@@ -360,7 +387,7 @@
                                 <span class="side-menu__label">Reports</span>
                                 <i class="fe fe-chevron-right side-menu__angle"></i>
                             </a>
-                            <ul class="slide-menu child1" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(119.5px, 173.5px, 0px);">
+                            <ul class="slide-menu child1">
                             
                                 <!--<li class="slide"><a onclick="navigate('/reports/transactions'); activeNavigation(this);" class="side-menu__item {!! $page=="chargebacks"?"active":"" !!}"><i class="ti ti-arrows-right-left mx-2"></i>Transactions</a></li>-->
                                 

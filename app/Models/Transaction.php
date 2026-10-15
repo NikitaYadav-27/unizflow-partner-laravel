@@ -130,7 +130,6 @@ class Transaction extends Model
     
     public function getWeeklySummary($user_id)
     {
-        // Get raw data from DB
         $data = $this->newQuery()
             ->selectRaw(
                 'DATE(created_at) as date, ' .
@@ -144,10 +143,8 @@ class Transaction extends Model
             ->get()
             ->toArray();
     
-        // Map results by date for fast lookup
         $map = array_column($data, null, 'date');
     
-        // Build final 7-day summary
         $summary = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = date('Y-m-d', strtotime("-$i days"));
@@ -162,22 +159,22 @@ class Transaction extends Model
     }
     
     public function getPendingDebitPayouts($limit){
-        return $this->where('service","payout")->where("status","Pending")->where("debited",0)->limit($limit)->get();
+        return $this->where('service', 'payout')->where('status', 'Pending')->where('debited', 0)->limit($limit)->get();
     }
     
     public function getFailedNonRefundedPayouts() {
-        return $this->where("service","payout")->where("status","Failed")->where("debited",1)->where("refunded",0)->get();
+        return $this->where('service', 'payout')->where('status', 'Failed')->where('debited', 1)->where('refunded', 0)->get();
     }
     
     public function getTodaysPayinUser() {
         $startTime = date("Y-m-d 00:00:00");
         $endTime = date("Y-m-d 23:59:59");
         return $this->selectRaw("user_id, sum(amount) as amount")
-            ->where("service","payin")
-            ->where("status","Success")
-            ->where("txn_complete_time', '>=', $startTime)
+            ->where('service', 'payin')
+            ->where('status', 'Success')
+            ->where('txn_complete_time', '>=', $startTime)
             ->where('txn_complete_time', '<=', $endTime)
-            ->groupBy("user_id")
+            ->groupBy('user_id')
             ->get();
     }
     
@@ -185,11 +182,11 @@ class Transaction extends Model
         $startTime = date("Y-m-d 00:00:00");
         $endTime = date("Y-m-d 23:59:59");
         return $this->selectRaw("user_id, sum(amount) as amount")
-            ->where('service","payout")
-            ->where("status","Success")
-            ->where("txn_complete_time', '>=', $startTime)
+            ->where('service', 'payout')
+            ->where('status', 'Success')
+            ->where('txn_complete_time', '>=', $startTime)
             ->where('txn_complete_time', '<=', $endTime)
-            ->groupBy("user_id")
+            ->groupBy('user_id')
             ->get();
     }
     
@@ -197,11 +194,11 @@ class Transaction extends Model
        $startTime = date("Y-m-d 00:00:00");
        $endTime   = date("Y-m-d 23:59:59");
        return $this->selectRaw("payin_provider as provider_id, sum(amount) as total_amount")
-           ->where('service","payin")
-           ->where("status", "Success")
-           ->where("txn_complete_time', '>=', $startTime)
+           ->where('service', 'payin')
+           ->where('status', 'Success')
+           ->where('txn_complete_time', '>=', $startTime)
            ->where('txn_complete_time', '<=', $endTime)
-           ->groupBy("payin_provider")
+           ->groupBy('payin_provider')
            ->get();
     }
 

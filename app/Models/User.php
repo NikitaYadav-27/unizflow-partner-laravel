@@ -37,7 +37,7 @@ class User extends Model
 
     public function updateWallet($userId, $amount)
     {
-        return $this->update($userId, ['wallet' => $amount]);
+        return $this->where('id', $userId)->update(['wallet' => $amount]);
     }
 
     public function hasApiAccess($userId)

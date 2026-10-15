@@ -5,21 +5,23 @@ class Callback extends Controller
 {
 
     private function sendWebhook($id) {
-       shell_exec("php ".env("app.basePath")."spark webhook:send '".$id."' > /dev/null 2>&1 &");
+        $artisanPath = base_path('artisan');
+        if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
+            pclose(popen("start /B php \"{$artisanPath}\" webhook:send {$id}", "r"));
+        } else {
+            shell_exec("php \"{$artisanPath}\" webhook:send '{$id}' > /dev/null 2>&1 &");
+        }
     }
     
     public function solitpay_payin() {
-        if(trim($_SERVER['REMOTE_ADDR']) != trim("43.224.1.241")){
+        if(request()->ip() !== "43.224.1.241"){
             return response()->json([
                 'responseMessage' => 'You are not Authorized',
                 'returnCode' => -1,
             ], 401);
         } 
-        $data = file_get_contents("php://input");
-        $data = json_decode($data);
+        $data = json_decode(request()->getContent());
         $transactionModel = new \App\Models\Transaction();
-        $userModel = new \App\Models\User();
-        $walletModel = new \App\Models\WalletTransaction();
         $transaction = $transactionModel->findTxnByMerchantId($data->txnReference);
         if(isset($transaction['status']) && in_array($transaction['status'],["Pending"])) {
             if($data->txnStatus == "Success" && round($transaction['amount']) == round($data->paid_amount)) {
@@ -33,31 +35,8 @@ class Callback extends Controller
                   "rrn" => $utr
                 ]);
 
-                //add wallet Transaction
-                $user = $userModel->find($transaction['user_id']);
-                $newBalance = number_format($user['wallet'] + $transaction['net_amount'], 2, '.', '');
-                $userModel->where('id', $user['id'])->update([
-                    "wallet" => $newBalance
-                ]);
-                
-                $walletModel->create([
-                    "user_id" => $user['id'],
-                    "type" =>	"CREDIT",
-                    "txn_type" =>	"PAYIN",
-                    "txnid" => $transaction['txnid'],	
-                    "opening" => $user['wallet'],
-                    "amount" => $transaction['amount'],
-                    "charges" => $transaction['charges'],
-                    "gst" => $transaction['gst'],
-                    "net_amount" => $transaction['net_amount'],
-                    "closing" => $newBalance
-                    ]);
-            
-                //update credited
-                $transactionModel->where('id', $transaction['id'])->update([
-                    "credited" => 1
-                ]);
-
+                // Payin funds remain unsettled until Admin/AutoSettlement settles them to Wallet or Bank.
+                // Wallet is NOT immediately credited here to prevent premature usage and double payout.
                 $this->sendWebhook($transaction['id']);
             }elseif($data->txnStatus == "Failed"){
                 //transaction failed
@@ -84,17 +63,16 @@ class Callback extends Controller
     }
     
     public function solitpay_payout(){
-        if(trim($_SERVER['REMOTE_ADDR']) != trim("43.224.1.241")){
+        if(request()->ip() !== "43.224.1.241"){
             return response()->json([
                 'responseMessage' => 'You are not Authorized',
                 'returnCode' => -1,
             ], 401);
         } 
-        $data = file_get_contents("php://input");
-        $data = json_decode($data);
+        $data = json_decode(request()->getContent());
         $transactionModel = new \App\Models\Transaction();
         $transaction = $transactionModel->findTxnByMerchantId($data->txnReference);
-        if(isset($transaction['status']) && in_array($transaction['status'],["Pending"])) {
+        if(isset($transaction['status']) && in_array($transaction['status'],["Pending", "Processing"])) {
             if($data->txnStatus == "Success") {
                 //transaction successfull
                 $utr = $data->rrn;
@@ -137,7 +115,7 @@ class Callback extends Controller
 
     public function zenova_payin()
     {
-        $raw = file_get_contents("php://input");
+        $raw = request()->getContent();
         $data = json_decode($raw);
 
         // Log every callback (for debugging / audit)
@@ -159,8 +137,6 @@ class Callback extends Controller
         }
 
         $transactionModel = new \App\Models\Transaction();
-        $userModel = new \App\Models\User();
-        $walletModel = new \App\Models\WalletTransaction();
         $transaction = $transactionModel->findTxnByMerchantId($data->txnID);
 
         if ($transaction && isset($transaction['status']) && $transaction['status'] == "Pending") {
@@ -175,31 +151,8 @@ class Callback extends Controller
                     "rrn" => $data->BankRRN ?? ''
                 ]);
 
-                //add wallet Transaction
-                $user = $userModel->find($transaction['user_id']);
-                $newBalance = number_format($user['wallet'] + $transaction['net_amount'], 2, '.', '');
-                $userModel->where('id', $user['id'])->update([
-                    "wallet" => $newBalance
-                ]);
-
-                $walletModel->create([
-                    "user_id" => $user['id'],
-                    "type" =>	"CREDIT",
-                    "txn_type" =>	"PAYIN",
-                    "txnid" => $transaction['txnid'],	
-                    "opening" => $user['wallet'],
-                    "amount" => $transaction['amount'],
-                    "charges" => $transaction['charges'],
-                    "gst" => $transaction['gst'],
-                    "net_amount" => $transaction['net_amount'],
-                    "closing" => $newBalance
-                    ]);
-            
-                //update credited
-                $transactionModel->where('id', $transaction['id'])->update([
-                    "credited" => 1
-                ]);
-                
+                // Payin funds remain unsettled until Admin/AutoSettlement settles them to Wallet or Bank.
+                // Wallet is NOT immediately credited here to prevent premature usage and double payout.
                 $this->sendWebhook($transaction['id']);
             } else {
                 // Transaction failed or mismatch
@@ -223,7 +176,7 @@ class Callback extends Controller
     
     public function zenova_payout()
     {
-        $raw = file_get_contents("php://input");
+        $raw = request()->getContent();
         $data = json_decode($raw);
 
         // Log raw callback
@@ -238,7 +191,7 @@ class Callback extends Controller
         $transactionModel = new \App\Models\Transaction();
         $transaction = $transactionModel->findTxnByMerchantId($data->txnid); // use txnid from callback
 
-        if (isset($transaction['status']) && in_array($transaction['status'], ["Pending"])) {
+        if (isset($transaction['status']) && in_array($transaction['status'], ["Pending", "Processing"])) {
 
             if (strtolower($data->status) === "success") {
                 // Transaction successful

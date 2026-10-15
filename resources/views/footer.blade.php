@@ -33,13 +33,6 @@
     .page{
        justify-content: start !important; 
     }
-
-    
-
- */
- 
-
-
 </style>
     
     <!-- Scroll To Top -->
@@ -54,7 +47,7 @@
     <?php echo view('includes/js', get_defined_vars()); ?>
     
 <script src="/assets/js/custom-switcher.min.js?v=767"></script>
-<script src="/assets/js/defaultmenu.min.js?v=788"></script>   
+<script src="/assets/js/defaultmenu.min.js?v=2564"></script>   
     
    
 

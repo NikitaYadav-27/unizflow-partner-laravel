@@ -1,10 +1,9 @@
-  --------------------------------------------------
 /vendor/
 /node_modules/
 npm-debug.log
 yarn-error.log
 
-  .env
+.env
 .env.backup
 .env.production
 .env.*.local
@@ -30,7 +29,6 @@ yarn-error.log
 !/storage/logs/.gitignore
 /storage/pail
 
-
 /auth.json
 .phpunit.result.cache
 /.phpunit.cache/
@@ -51,7 +49,6 @@ Desktop.ini
 Homestead.json
 Homestead.yaml
 
+*.log
 fix_*.php
 convert_models.php
-
-*.log

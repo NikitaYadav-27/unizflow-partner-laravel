@@ -51,6 +51,10 @@
                  <span></span> <i class="fa fa-caret-down"></i>
                </div>
 
+               <button onclick="downloadSettlementsReport(this)" class="btn btn-outline-primary sm-w-100">
+                 <i class="ti ti-download me-1"></i> Export CSV
+               </button>
+
             </div>
         </div>
 
@@ -174,6 +178,21 @@
             window.dataTable.DataTable().ajax.reload();
         }
 
+    }
+
+    function downloadSettlementsReport(btn) {
+        if (btn) {
+            btn.disabled = true;
+            setTimeout(() => { btn.disabled = false; }, 3000);
+        }
+        const params = new URLSearchParams({
+            reportType: 'settlements',
+            startDate: window.startDate || '',
+            endDate: window.endDate || '',
+            status: '',
+            txnType: ''
+        });
+        location.href = '/api/export/report/download?' + params.toString();
     }
 
 </script>

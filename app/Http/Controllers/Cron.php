@@ -1,12 +1,21 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\WalletTransaction;
+use App\Models\FundRequest;
+use App\Models\Settlement;
+use App\Models\HoldWallet;
+use App\Models\Credits;
+use App\Models\Provider;
+use Illuminate\Support\Facades\DB;
+
 class Cron extends Controller {
     
     public function index() {
-        //echo "<pre>";
         $ipAddress = request()->ip();
-        if($ipAddress != env("server.ip")) {
+        if(env("server.ip") && $ipAddress != env("server.ip")) {
             return response()->json([
                "status" => "error",
                "message" => "Unauthorised"
@@ -22,7 +31,10 @@ class Cron extends Controller {
         $this->update_payin_payout_users();
         $this->update_payin_payout_providers();
         
-  
+        return response()->json([
+            "status" => "success",
+            "message" => "Cron executed successfully"
+        ]);
     }
     
     private function clear_payouts() {
@@ -58,8 +70,12 @@ class Cron extends Controller {
                   "closing" => $newBalance
                ]);
                $transactionModel->where('id', $transaction['id'])->update(["debited" => 1]);
-               //process transaction with provider
-               shell_exec("php ".env("app.basePath")."spark txn:process '".$transaction['txnid']."' > /dev/null 2>&1 &");
+               $artisanPath = base_path('artisan');
+               if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
+                   pclose(popen("start /B php \"{$artisanPath}\" txn:process {$transaction['txnid']}", "r"));
+               } else {
+                   shell_exec("php \"{$artisanPath}\" txn:process '{$transaction['txnid']}' > /dev/null 2>&1 &");
+               }
            }
            
         }
@@ -72,12 +88,10 @@ class Cron extends Controller {
         $transactions = $transactionModel->getFailedNonRefundedPayouts();
         foreach($transactions as $transaction) {
            $user = $userModel->find($transaction['user_id']);
-           //refund amount
            $newBalance = number_format($user['wallet'] + $transaction['net_amount'], 2, '.', '');
            $userModel->where('id', $user['id'])->update([
              "wallet" => $newBalance
            ]);
-           //add wallet Transaction
            
            $walletModel->create([
               "user_id" => $user['id'],
@@ -92,7 +106,6 @@ class Cron extends Controller {
               "closing" => $newBalance
             ]);
     
-           //update refunded
            $transactionModel->where('id', $transaction['id'])->update([
               "refunded" => 1
            ]);
@@ -329,56 +342,53 @@ class Cron extends Controller {
     }
     
     public function update_payin_payout_users() {
-       $transactionModel = new \App\Models\Transaction();
-       $userModel = new \App\Models\User();
-       $usersList = [];
-       foreach ($userModel->get() as $user) {
-           $usersList[$user['id']] = $user['id'];
-       }
-       $payinUsersList = $usersList;
-       $payoutUsersList = $usersList;
-       foreach ($transactionModel->getTodaysPayinUser() as $usage) {
-           $userModel->where('id', $usage['user_id'])->update(["todays_payin" => $usage['amount']]);
-           unset($payinUsersList[$usage['user_id']]);
-       }
-       if (!empty($payinUsersList)) {
-           $userModel->whereIn("id", array_values($payinUsersList))
-                     ->set("todays_payin", 0)
-                     ->where('id', );
-       }
-       foreach ($transactionModel->getTodaysPayoutUser() as $usage) {
-           $userModel->update($usage['user_id'])->update(["todays_payout" => $usage['amount']]);
-           unset($payoutUsersList[$usage['user_id']]);
-       }
-       if (!empty($payoutUsersList)) {
-           $userModel->whereIn("id", array_values($payoutUsersList))
-                     ->set("todays_payout", 0)
-                     ->where('id', );
-       }
-   }
-   
-   public function update_payin_payout_providers() {
-       $transactionModel = new \App\Models\Transaction();
-       $providerModel = new \App\Models\Provider();
-       $providersList = [];
-       foreach ($providerModel->get() as $provider) {
-           $providersList[$provider['id']] = $provider['id'];
-       }
-       $providerUsage = $transactionModel->getTodaysProviderUsage();
-       foreach ($providerUsage as $usage) {
-           if (!empty($usage['provider_id'])) { 
-               $providerModel->update($usage['provider_id'])->update([
-                   "used_limit" => $usage['total_amount']
-               ]);
-               unset($providersList[$usage['provider_id']]);
-           }
-       }
-       if (!empty($providersList)) {
-           $providerModel->whereIn("id", array_values($providersList))
-                         ->set("used_limit", 0)
-                         ->update();
-       }
-   }
+        $transactionModel = new \App\Models\Transaction();
+        $userModel = new \App\Models\User();
+        $usersList = [];
+        foreach ($userModel->get() as $user) {
+            $usersList[$user['id']] = $user['id'];
+        }
+        $payinUsersList = $usersList;
+        $payoutUsersList = $usersList;
+        foreach ($transactionModel->getTodaysPayinUser() as $usage) {
+            $userModel->where('id', $usage['user_id'])->update(["todays_payin" => $usage['amount']]);
+            unset($payinUsersList[$usage['user_id']]);
+        }
+        if (!empty($payinUsersList)) {
+            $userModel->whereIn("id", array_values($payinUsersList))
+                      ->update(["todays_payin" => 0]);
+        }
+        foreach ($transactionModel->getTodaysPayoutUser() as $usage) {
+            $userModel->where('id', $usage['user_id'])->update(["todays_payout" => $usage['amount']]);
+            unset($payoutUsersList[$usage['user_id']]);
+        }
+        if (!empty($payoutUsersList)) {
+            $userModel->whereIn("id", array_values($payoutUsersList))
+                      ->update(["todays_payout" => 0]);
+        }
+    }
+    
+    public function update_payin_payout_providers() {
+        $transactionModel = new \App\Models\Transaction();
+        $providerModel = new \App\Models\Provider();
+        $providersList = [];
+        foreach ($providerModel->get() as $provider) {
+            $providersList[$provider['id']] = $provider['id'];
+        }
+        $providerUsage = $transactionModel->getTodaysProviderUsage();
+        foreach ($providerUsage as $usage) {
+            if (!empty($usage['provider_id'])) { 
+                $providerModel->where('id', $usage['provider_id'])->update([
+                    "used_limit" => $usage['total_amount']
+                ]);
+                unset($providersList[$usage['provider_id']]);
+            }
+        }
+        if (!empty($providersList)) {
+            $providerModel->whereIn("id", array_values($providersList))
+                          ->update(["used_limit" => 0]);
+        }
+    }
     
    
 

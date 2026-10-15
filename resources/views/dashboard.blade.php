@@ -252,7 +252,7 @@
                     
                     <div class="d-flex flex-column align-items-start gap-1">
                          <p class="mb-0 fs-14 text-white">Unsettled Amount</p>
-                      <span>₹ {!! number_format($user['hold_wallet'], 2, '.', '') !!}</span>
+                      <span class="text-warning fw-semibold">₹ {!! $unsettled_amount ?? '0.00' !!}</span>
                       
                     </div>
                     

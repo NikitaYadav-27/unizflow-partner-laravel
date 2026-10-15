@@ -44,6 +44,11 @@
                     <input type="text" onkeyup="changeSearchValue(this.value)" class="form-control" id="searchValue"
                         placeholder="Search">
                 </div>
+                <div class="me-2">
+                    <button onclick="downloadWalletLedger(this)" class="btn btn-outline-primary">
+                        <i class="ti ti-download me-1"></i> Export CSV
+                    </button>
+                </div>
 
 
             </div>
@@ -127,6 +132,14 @@
             window.dataTable.DataTable().ajax.reload();
         }
 
+    }
+
+    function downloadWalletLedger(btn) {
+        if (btn) {
+            btn.disabled = true;
+            setTimeout(() => { btn.disabled = false; }, 3000);
+        }
+        location.href = '/api/export/wallet-ledger?searchBy=' + encodeURIComponent(window.searchBy || '') + '&searchValue=' + encodeURIComponent(window.searchValue || '');
     }
 
 </script>

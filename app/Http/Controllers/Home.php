@@ -2,12 +2,6 @@
 namespace App\Http\Controllers;
 use App\Libraries\Validators;
 use App\Libraries\Recaptcha;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use CodeIgniter\HTTP\ResponseInterface;
-use Box\Spout\Writer\Common\Creator\WriterEntityFactory;
-use Box\Spout\Common\Entity\Row;
 
 
 class Home extends Controller
@@ -38,6 +32,14 @@ class Home extends Controller
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
             $data['user'] = $user;
+            $transactionModel = new \App\Models\Transaction();
+            $unsettledAmount = $transactionModel
+                ->where('user_id', $user['id'])
+                ->where('service', 'payin')
+                ->where('status', 'Success')
+                ->where('settled', 0)
+                ->sum('net_amount');
+            $data['unsettled_amount'] = number_format($unsettledAmount, 2, '.', '');
             return view('dashboard', $data);
         }
     }
@@ -88,7 +90,7 @@ class Home extends Controller
     }
 
     // Report type validation
-    if (!in_array($reportType, ["transactions", "settlements"])) {
+    if (!in_array($reportType, ["transactions", "settlements", "wallet", "wallet_ledger"])) {
         return response()->json([
             "status" => "error",
             "message" => "Invalid Report Type"
@@ -111,6 +113,41 @@ class Home extends Controller
         ], 400);
     }
 
+    if ($reportType === 'wallet' || $reportType === 'wallet_ledger') {
+        $walletBuilder = \App\Models\WalletTransaction::where("user_id", $session->get('user_id'))
+            ->whereBetween('created_at', ["$startDate 00:00:00", "$endDate 23:59:59"]);
+
+        $walletHeaders = [
+            'ID', 'Type', 'Txn Type', 'Txn ID', 'Amount', 'Opening', 'Closing', 'Remarks', 'Created At'
+        ];
+        $walletFilename = 'wallet_ledger_' . date('YmdHis') . '.csv';
+
+        return response()->streamDownload(function() use ($walletBuilder, $walletHeaders) {
+            $output = fopen('php://output', 'w');
+            fputs($output, "\xEF\xBB\xBF");
+            fputcsv($output, $walletHeaders);
+            $rowCounter = 1;
+            foreach ($walletBuilder->orderBy('id', 'DESC')->cursor() as $wt) {
+                fputcsv($output, [
+                    $rowCounter++,
+                    strtoupper($wt->type ?? ''),
+                    $wt->txn_type ?? '',
+                    $wt->txnid ?? '',
+                    $wt->net_amount ?? $wt->amount ?? '0',
+                    $wt->opening ?? '0',
+                    $wt->closing ?? '0',
+                    $wt->remarks ?? '',
+                    $wt->created_at ?? ''
+                ]);
+            }
+            fclose($output);
+        }, $walletFilename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$walletFilename\"",
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
+    }
+
     $transactionModel = new \App\Models\Transaction();
     $builder = $transactionModel->newQuery();
     $builder->where("user_id", $session->get('user_id'));
@@ -124,15 +161,7 @@ class Home extends Controller
         $builder->where("service", $txnType);
     }
 
-    // Create Excel writer with streaming
-    $writer = WriterEntityFactory::createXLSXWriter();
-    $filename = 'report_' . date('YmdHis') . '.xlsx';
-
-    // Set headers for direct download
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header("Content-Disposition: attachment;filename=\"$filename\"");
-    header('Cache-Control: max-age=0');
-    $writer->openToBrowser($filename);
+    $filename = 'report_' . date('YmdHis') . '.csv';
 
     // Define headers
     $headers = [
@@ -141,41 +170,82 @@ class Home extends Controller
         'Payee VPA', 'Account Number', 'IFSC Code', 'Remarks', 
         'Transaction Complete Time', 'Transaction Time'
     ];
-    $headerRow = WriterEntityFactory::createRowFromArray($headers);
-    $writer->addRow($headerRow);
 
-    // Stream results directly using cursor
-    $rowCounter = 1;
-    $query = $builder->get();
-    while ($transaction = $query->getUnbufferedRow('array')) {
-        $rowData = [
-            $rowCounter++,
-            strtoupper($transaction['service']),
-            $transaction['name'],
-            $transaction['phone'],
-            $transaction['email'],
-            $transaction['txnid'],
-            $transaction['rrn'],
-            $transaction['reference_id'],
-            $transaction['status'],
-            $transaction['amount'],
-            $transaction['charges'],
-            $transaction['gst'],
-            $transaction['payee_name'],
-            $transaction['payee_vpa'],
-            $transaction['account_number'],
-            $transaction['ifsc_code'],
-            $transaction['remarks'],
-            $transaction['txn_complete_time'],
-            $transaction['created_at']
+    if ($reportType === 'settlements') {
+        $settlementBuilder = \App\Models\Settlement::where("user_id", $session->get('user_id'))
+            ->whereBetween('created_at', ["$startDate 00:00:00", "$endDate 23:59:59"]);
+        if ($status != "") {
+            $settlementBuilder->where("status", $status);
+        }
+
+        $settlementHeaders = [
+            'ID', 'Txn ID', 'Amount', 'Charges', 'GST', 'Net Amount', 'Status', 'Settle To', 'UTR', 'Remarks', 'Created At'
         ];
+        $settlementFilename = 'settlements_report_' . date('YmdHis') . '.csv';
 
-        $dataRow = WriterEntityFactory::createRowFromArray($rowData);
-        $writer->addRow($dataRow);
+        return response()->streamDownload(function() use ($settlementBuilder, $settlementHeaders) {
+            $output = fopen('php://output', 'w');
+            fputs($output, "\xEF\xBB\xBF");
+            fputcsv($output, $settlementHeaders);
+            $rowCounter = 1;
+            foreach ($settlementBuilder->orderBy('id', 'DESC')->cursor() as $settlement) {
+                fputcsv($output, [
+                    $rowCounter++,
+                    $settlement->txnid ?? '',
+                    $settlement->amount ?? '',
+                    $settlement->charges ?? '',
+                    $settlement->gst ?? '',
+                    $settlement->net_amount ?? '',
+                    $settlement->status ?? '',
+                    $settlement->settle_to ?? '',
+                    $settlement->rrn ?? $settlement->utr ?? '',
+                    $settlement->remarks ?? '',
+                    $settlement->created_at ?? ''
+                ]);
+            }
+            fclose($output);
+        }, $settlementFilename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$settlementFilename\"",
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
     }
 
-    $writer->close();
-    exit; // Prevent any additional output
+    return response()->streamDownload(function() use ($builder, $headers) {
+        $output = fopen('php://output', 'w');
+        fputs($output, "\xEF\xBB\xBF");
+        fputcsv($output, $headers);
+
+        $rowCounter = 1;
+        foreach ($builder->orderBy('id', 'DESC')->cursor() as $transaction) {
+            fputcsv($output, [
+                $rowCounter++,
+                strtoupper($transaction->service ?? ''),
+                $transaction->name ?? '',
+                $transaction->phone ?? '',
+                $transaction->email ?? '',
+                $transaction->txnid ?? '',
+                $transaction->rrn ?? '',
+                $transaction->reference_id ?? '',
+                $transaction->status ?? '',
+                $transaction->amount ?? '',
+                $transaction->charges ?? '',
+                $transaction->gst ?? '',
+                $transaction->payee_name ?? '',
+                $transaction->payee_vpa ?? '',
+                $transaction->account_number ?? '',
+                $transaction->ifsc_code ?? '',
+                $transaction->remarks ?? '',
+                $transaction->txn_complete_time ?? '',
+                $transaction->created_at ?? ''
+            ]);
+        }
+        fclose($output);
+    }, $filename, [
+        'Content-Type' => 'text/csv; charset=UTF-8',
+        'Content-Disposition' => "attachment; filename=\"$filename\"",
+        'Cache-Control' => 'no-store, no-cache',
+    ]);
 }
     
     public function reports_download() {
@@ -1042,73 +1112,15 @@ class Home extends Controller
             return $this->fail("Insufficient Funds");
         }
 
-        // ────────────────────────
-        // GENERATE TXN-ID
-        // ────────────────────────
+        // ──────────────────────── 
         $txnId = $this->generateTxnId();
-        $referenceId = "";
-        $status = "Pending";
-        $utr = "";
-        $provider = null;
-        $providerResponse = [];
 
-        // ────────────────────────
-        // SOLITPAY PROVIDER
-        // ────────────────────────
-        if ($loggedInUser['payout_provider'] == 2) {
-
-            $provider = new \App\Libraries\Solitpay();
-            $providerResponse = $provider->makePayout(
-                $txnId,
-                $name,
-                $phone,
-                $amount,
-                $account_number,
-                $ifsc_code
-            );
-            
-            if (isset($providerResponse->status) && strtolower($providerResponse->status) == "success") {
-                $status = "Processing";
-                $referenceId = $providerResponse->data->transaction->txnid ?? "";
-                $utr         = $providerResponse->data->transaction->utr ?? "";
-            }
-        }
-
-        // ────────────────────────
-        // ZENOVA PROVIDER
-        // ────────────────────────
-        if ($loggedInUser['payout_provider'] == 4) {
-
-            $provider = new \App\Libraries\Zenova();
-            $providerResponse = $provider->makePayout(
-                $loggedInUser['merchant_id'],
-                '12355',
-                $phone,
-                $name,
-                $account_number,
-                $ifsc_code,
-                $amount,
-                $txnId
-            );
-            
-            // if (!isset($providerResponse->isSuccess) || $providerResponse->isSuccess != true) {
-            //     return $this->fail("Zenova Error: " . ($providerResponse->message ?? "Unknown error"));
-            // }
-            if (isset($providerResponse->isSuccess) && $providerResponse->isSuccess == true) {
-                $status = $providerResponse->status;
-                $referenceId = $txnId;
-            }
-        }
-
-        // ────────────────────────
-        // INSERT TRANSACTION
-        // ────────────────────────
         $transaction->create([
             'user_id' => $loggedInUser['id'],
             'service' => 'payout',
             'txnid' => $txnId,
-            'reference_id' => $referenceId,
-            'status' => $status,
+            'reference_id' => '',
+            'status' => 'Pending',
             'name' => $name,
             'phone' => $phone,
             'account_number' => $account_number,
@@ -1123,28 +1135,6 @@ class Home extends Controller
             'merchant_txnid' => $txnId
         ]);
 
-        // Log request/response
-        $tres = new \App\Models\Transactionres();
-        $tres->create([
-            'txnid' => $txnId,
-            'type' => 'request',
-            'data' => json_encode($provider->getRequest() ?? [])
-        ]);
-        $tres->create([
-            'txnid' => $txnId,
-            'type' => 'creation',
-            'data' => json_encode($providerResponse)
-        ]);
-
-        // return response()->json([
-        //     'status' => 'success',
-        //     'message' => 'Payout Initiated Successfully!',
-        //     'data' => [
-        //         'txnid' => $txnId,
-        //         'reference' => $referenceId,
-        //         'utr' => $utr ?: 'NA'
-        //     ]
-        // ]);
         return response()->json([
            'status' => 'success',
            'message' => 'Transaction Initiated Successfully !'
@@ -1170,6 +1160,13 @@ class Home extends Controller
         $transaction = new \App\Models\Transaction();
         $todayData = $transaction->getTodayData($user_id);
         $totalData = $transaction->getTotalData($user_id);
+        $unsettledAmount = $transaction
+            ->where('user_id', $user_id)
+            ->where('service', 'payin')
+            ->where('status', 'Success')
+            ->where('settled', 0)
+            ->sum('net_amount');
+        $totalData['unsettled'] = number_format($unsettledAmount, 2, '.', '');
         $statusData = $transaction->getStatusData($user_id);
         $recentTransactions = $transaction->getRecentTransactions($user_id,5);
         $weeklySummary = $transaction->getWeeklySummary($user_id);
@@ -1234,7 +1231,6 @@ class Home extends Controller
         }
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        helper(['text', 'date']);
         $lastSentTime = $session->get('api_key_otp_time');
         
         if ($lastSentTime && (time() - $lastSentTime) < 600) {
@@ -1313,7 +1309,7 @@ class Home extends Controller
     }
     
     
-    public function update_webhook_send_otp($type) {
+    public function update_webhook_send_otp($type = null) {
         $session = session();
         if (!$session->get('user_id')) {
             return response()->json([
@@ -1323,10 +1319,16 @@ class Home extends Controller
         }
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        $input = (object) json_decode(request()->getContent());
-        $url = $input->url;
+        $input = json_decode(request()->getContent());
+        $url = request()->input('url') ?? ($input->url ?? null);
         
-        if(!in_array($type,["payin","payout"])) {
+        if (!$type) {
+            $type = request()->input('type') ?? ($input->type ?? null);
+        }
+
+        $type = strtolower((string) $type);
+
+        if(!in_array($type, ["payin", "payout"])) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Invalid Url Type'
@@ -1339,8 +1341,6 @@ class Home extends Controller
                 'message' => 'Invalid Url'
             ], 400);
         }
-        
-        helper(['text', 'date']);
         
         $lastSentTime = $session->get('wh_otp_time');
         
@@ -1382,7 +1382,7 @@ class Home extends Controller
         }
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        $inputOtp = request()->post('otp'); 
+        $inputOtp = request()->post('otp') ?? request()->input('otp'); 
     
         $storedOtp = $session->get('wh_otp');
         $newUrl = $session->get('pending_url');
@@ -1418,7 +1418,7 @@ class Home extends Controller
     
         return response()->json([
             'status' => 'success',
-            'message' => 'API Key regenerated and updated successfully.'
+            'message' => 'Webhook URL updated successfully.'
         ]);
     }
     
@@ -1461,9 +1461,6 @@ class Home extends Controller
                ], 429);
             }
         }
-        
-        
-        helper(['text', 'date']);
         
         $lastSentTime = $session->get('ip_otp_time');
         
@@ -1603,8 +1600,6 @@ class Home extends Controller
                    'message' => "Unauthorized to delete IP"
             ], 401);
         }
-        
-        helper(['text', 'date']);
         
         $lastSentTime = $session->get('ipdl_otp_time');
         
@@ -1794,7 +1789,7 @@ class Home extends Controller
         $branch = $data['BRANCH'];
         
         //check if already any pending account
-        if($db->table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
+        if(\Illuminate\Support\Facades\DB::table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Your previous bank account is already pending for approval. Please wait for update before updating a new one.'
@@ -1802,7 +1797,7 @@ class Home extends Controller
         }
         
         //insert for approval
-        $db->table("users_bank")->set([
+        \Illuminate\Support\Facades\DB::table("users_bank")->insert([
           "user_id" => $user_id,
           "name" => $name,
           "account_name" => $name,
@@ -1810,8 +1805,10 @@ class Home extends Controller
           "account_ifsc" => $ifsc,
           "bank_name" => $bank,
           "branch" => $branch,
-          "status" => "Pending"
-        ])->create();
+          "status" => "Pending",
+          "created_at" => now(),
+          "updated_at" => now()
+        ]);
         
          return response()->json([
             'status'  => 'success',
@@ -1819,12 +1816,14 @@ class Home extends Controller
          ], 200);
     }
     
-    private function sendEmail($email,$subject,$message){
-        $emailService = \Config\Services::email();
-        $emailService->setTo($email);
-        $emailService->setSubject($subject);
-        $emailService->setMessage($message);
-        $emailService->send(); 
+    private function sendEmail($email, $subject, $message){
+        try {
+            \Illuminate\Support\Facades\Mail::raw($message, function($mail) use ($email, $subject) {
+                $mail->to($email)->subject($subject);
+            });
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SendEmail error: ' . $e->getMessage());
+        }
     }
 
     public function api_docs()
@@ -1838,6 +1837,59 @@ class Home extends Controller
             $data['user'] = $user;
             return view('api_docs', $data);
         }
+    }
+
+    public function export_wallet_ledger()
+    {
+        $session = session();
+        if (!$session->get('user_id')) {
+            return response()->json([
+                "status" => "error",
+                "message" => "Unauthorized"
+            ], 401);
+        }
+
+        $searchBy = request()->input('searchBy');
+        $searchValue = request()->input('searchValue');
+        $availableSearchKeys = ["type", "txn_type", "txnid", "amount", "opening", "closing", "remarks"];
+
+        $walletModel = new \App\Models\WalletTransaction();
+        $builder = $walletModel->newQuery();
+        $builder->where('user_id', $session->get('user_id'));
+
+        if (!empty($searchBy) && !empty($searchValue) && in_array($searchBy, $availableSearchKeys)) {
+            $builder->where($searchBy, 'LIKE', '%' . trim($searchValue, "\"'") . '%');
+        }
+
+        $builder->orderBy('id', 'DESC');
+        $filename = 'wallet_ledger_' . date('Ymd_His') . '.csv';
+        $columns = ['ID', 'Type', 'Txn Type', 'Txn ID', 'Net Amount', 'Opening', 'Closing', 'Remarks', 'Created At'];
+
+        return response()->streamDownload(function() use ($builder, $columns) {
+            $output = fopen('php://output', 'w');
+            fputs($output, "\xEF\xBB\xBF");
+            fputcsv($output, $columns);
+            $index = 1;
+
+            foreach ($builder->cursor() as $wt) {
+                fputcsv($output, [
+                    $index++,
+                    strtoupper($wt->type ?? ''),
+                    $wt->txn_type ?? '',
+                    $wt->txnid ?? '',
+                    $wt->net_amount ?? $wt->amount ?? '0',
+                    $wt->opening ?? '0',
+                    $wt->closing ?? '0',
+                    $wt->remarks ?? '',
+                    $wt->created_at ?? ''
+                ]);
+            }
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
     }
 
 }

@@ -663,16 +663,17 @@ class Auth extends Controller
     }
 
     public function ad_login() {
-        $userModel = new \App\Models\User();
-        if(strlen($_GET['ad_token']) > 10){
-            $user = $userModel->where("ad_token",$_GET['ad_token'])->first();;
-            if(isset($user["id"])){
-                session()->put("user_id",$user["id"]);
+        $adToken = request()->query('ad_token');
+        if ($adToken && strlen($adToken) > 10) {
+            $userModel = new \App\Models\User();
+            $user = $userModel->where("ad_token", $adToken)->first();
+            if ($user && isset($user["id"])) {
+                session()->put("user_id", $user["id"]);
                 $userModel->where('id', $user["id"])->update(["ad_token" => ""]);
                 return redirect('/user/dashboard');
             }
         }
-        
+        return redirect('/user/login')->with('error', 'Invalid or expired login token.');
     }
 
 }
