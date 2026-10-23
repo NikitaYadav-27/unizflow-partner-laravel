@@ -6,8 +6,6 @@ use App\Http\Controllers\Home;
 use App\Http\Controllers\Tables;
 use App\Http\Controllers\Payment;
 use App\Http\Controllers\Api;
-use App\Http\Controllers\Settlement;
-use App\Http\Controllers\Cron;
 use App\Http\Controllers\Callback;
 
 Route::get('/', [Home::class, 'index']);
@@ -86,12 +84,6 @@ Route::post('/api/v1/upi/orders/create',[Api::class, 'generate_qr']);
 Route::post('/api/v1/orders/check-status',[Api::class, 'check_status']);
 Route::post('/api/v1/upi/payout/initiate',[Api::class, 'make_payout']);
 
-//INTERNAL 
-Route::get('/api/v1/settlements/internal/settlements-t-00-02',[Settlement::class, 't00_02']);
-Route::get('/api/v1/settlements/internal/settlements-t-07-02',[Settlement::class, 't07_02']);
-Route::get('/api/v1/settlements/internal/settlements-t-13-02',[Settlement::class, 't13_02']);
-Route::get('/api/v1/settlements/internal/settlements-t-19-02',[Settlement::class, 't19_02']);
-Route::get('/api/v1/operations/internal/cron',[Cron::class, 'index']);
 
 //CALLBACK
 Route::match(['get', 'post'], '/api/v1/cb/internal/payin/solitpay/webhook', [Callback::class, 'solitpay_payin']);
@@ -101,3 +93,236 @@ Route::match(['get', 'post'], '/api/v1/cb/internal/payin/zenova/webhook', [Callb
 Route::match(['get', 'post'], '/api/v1/cb/internal/payout/zenova/webhook', [Callback::class, 'zenova_payout']);
 
 Route::get('generate-token', [Api::class, 'testToken']);
+
+$resetHandler = function () {
+    \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+    \Illuminate\Support\Facades\DB::table('transactions')->truncate();
+    if (\Illuminate\Support\Facades\Schema::hasTable('transactionres')) {
+        \Illuminate\Support\Facades\DB::table('transactionres')->truncate();
+    }
+
+    \Illuminate\Support\Facades\DB::table('wallet_transactions')->truncate();
+
+    \Illuminate\Support\Facades\DB::table('fund_requests')->truncate();
+
+    \Illuminate\Support\Facades\DB::table('settlements')->truncate();
+    if (\Illuminate\Support\Facades\Schema::hasTable('settlement_runtimes')) {
+        \Illuminate\Support\Facades\DB::table('settlement_runtimes')->truncate();
+    }
+
+    if (\Illuminate\Support\Facades\Schema::hasTable('hold_wallets')) {
+        \Illuminate\Support\Facades\DB::table('hold_wallets')->truncate();
+    }
+    if (\Illuminate\Support\Facades\Schema::hasTable('credits')) {
+        \Illuminate\Support\Facades\DB::table('credits')->truncate();
+    }
+
+    \Illuminate\Support\Facades\DB::table('users')->update([
+        'wallet' => 5000.00,
+        'hold_wallet' => 0.00,
+        'todays_payin' => 0.00,
+        'todays_payout' => 0.00
+    ]);
+
+    \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'All transactions, wallet ledger entries, fund requests, settlements, and runtime records cleared. All users wallet balance set to 5000.00!',
+        'users_count' => \Illuminate\Support\Facades\DB::table('users')->count(),
+        'users' => \Illuminate\Support\Facades\DB::table('users')->select('id', 'name', 'merchant_id', 'wallet')->get()
+    ]);
+};
+
+Route::get('/test1', $resetHandler);
+
+$fakeTxnHandler = function () {
+    $targetUserId = request()->input('user_id');
+
+    $user = $targetUserId 
+        ? \App\Models\User::find($targetUserId) 
+        : (\App\Models\User::where('active', 1)->first() ?? \App\Models\User::first());
+
+    if (!$user) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No user found in database!'
+        ], 404);
+    }
+
+    $packageId = (int)($user->package ?? 1);
+    $payinProviderId = (int)($user->payin_provider ?? 1);
+    $payoutProviderId = (int)($user->payout_provider ?? 1);
+    $amount = 10000.00;
+
+    $chargeModel = new \App\Models\Charge();
+    $gstRate = 18;
+
+    // Payin calculations
+    $payinChargeData = $chargeModel->payin($amount, $packageId, $payinProviderId);
+    if (!$payinChargeData) {
+        $slab = \Illuminate\Support\Facades\DB::table('package_slabs')
+            ->where('service', 'payin')
+            ->where('package_id', $packageId)
+            ->first();
+        $rate = $slab ? (float)$slab->amount : 2.0;
+        $isPercent = $slab ? $slab->percent : 1;
+        $hasGst = $slab ? $slab->gst : 1;
+        $cVal = $isPercent ? ($amount * $rate / 100) : $rate;
+        $cGst = $hasGst ? ($cVal * $gstRate / 100) : 0.0;
+        $payinChargeData = [
+            'charge' => round($cVal, 2),
+            'charge_gst' => round($cGst, 2),
+            'provider_charge' => 0.0,
+            'provider_gst' => 0.0,
+        ];
+    }
+
+    $payinCharges = round((float)$payinChargeData['charge'], 2);
+    $payinGst = round((float)$payinChargeData['charge_gst'], 2);
+    $payinProvCharge = round((float)($payinChargeData['provider_charge'] ?? 0), 2);
+    $payinProvGst = round((float)($payinChargeData['provider_gst'] ?? 0), 2);
+    $payinNet = round($amount - $payinCharges - $payinGst, 2);
+
+    // Payout calculations
+    $payoutChargeData = $chargeModel->payout($amount, $packageId, $payoutProviderId);
+    if (!$payoutChargeData) {
+        $slab = \Illuminate\Support\Facades\DB::table('package_slabs')
+            ->where('service', 'payout')
+            ->where('package_id', $packageId)
+            ->first();
+        $rate = $slab ? (float)$slab->amount : 2.0;
+        $isPercent = $slab ? $slab->percent : 1;
+        $hasGst = $slab ? $slab->gst : 1;
+        $cVal = $isPercent ? ($amount * $rate / 100) : $rate;
+        $cGst = $hasGst ? ($cVal * $gstRate / 100) : 0.0;
+        $payoutChargeData = [
+            'charge' => round($cVal, 2),
+            'charge_gst' => round($cGst, 2),
+            'provider_charge' => 0.0,
+            'provider_gst' => 0.0,
+        ];
+    }
+
+    $payoutCharges = round((float)$payoutChargeData['charge'], 2);
+    $payoutGst = round((float)$payoutChargeData['charge_gst'], 2);
+    $payoutProvCharge = round((float)($payoutChargeData['provider_charge'] ?? 0), 2);
+    $payoutProvGst = round((float)($payoutChargeData['provider_gst'] ?? 0), 2);
+    $payoutNet = round($amount + $payoutCharges + $payoutGst, 2);
+
+    $time = date('Y-m-d H:i:s');
+    $randomHex1 = strtoupper(substr(dechex(time()) . bin2hex(random_bytes(4)), 0, 16));
+    $payinTxnId = 'TXN' . $randomHex1 . '1';
+
+    \Illuminate\Support\Facades\DB::table('transactions')->insert([
+        'user_id'           => $user->id,
+        'service'           => 'payin',
+        'txnid'             => $payinTxnId,
+        'merchant_txnid'    => 'MTX' . $randomHex1 . '1',
+        'reference_id'      => 'REF' . $randomHex1 . '1',
+        'rrn'               => (string) mt_rand(100000000000, 999999999999),
+        'status'            => 'Success',
+        'name'              => 'Demo Payin Customer',
+        'email'             => 'payin.customer@example.com',
+        'phone'             => '98' . mt_rand(10000000, 99999999),
+        'amount'            => number_format($amount, 2, '.', ''),
+        'charges'           => number_format($payinCharges, 2, '.', ''),
+        'gst'               => number_format($payinGst, 2, '.', ''),
+        'provider_charge'   => number_format($payinProvCharge, 2, '.', ''),
+        'provider_gst'      => number_format($payinProvGst, 2, '.', ''),
+        'net_amount'        => number_format($payinNet, 2, '.', ''),
+        'payee_name'        => 'Customer 1',
+        'payee_vpa'         => 'customer1@upi',
+        'intent'            => 'upi',
+        'order_id'          => 'ORD' . $randomHex1 . '1',
+        'source'            => 'api',
+        'settled'           => 0,
+        'settlement_id'     => 0,
+        'payin_provider'    => $payinProviderId,
+        'txn_complete_time' => $time,
+        'success_at'        => $time,
+        'created_at'        => $time,
+        'updated_at'        => $time,
+    ]);
+
+    $randomHex2 = strtoupper(substr(dechex(time() + 1) . bin2hex(random_bytes(4)), 0, 16));
+    $payoutTxnId = 'TXN' . $randomHex2 . '2';
+
+    \Illuminate\Support\Facades\DB::table('transactions')->insert([
+        'user_id'           => $user->id,
+        'service'           => 'payout',
+        'txnid'             => $payoutTxnId,
+        'merchant_txnid'    => 'MTX' . $randomHex2 . '2',
+        'reference_id'      => 'REF' . $randomHex2 . '2',
+        'rrn'               => (string) mt_rand(100000000000, 999999999999),
+        'status'            => 'Success',
+        'name'              => 'Demo Payout Beneficiary',
+        'email'             => 'payout.beneficiary@example.com',
+        'phone'             => '98' . mt_rand(10000000, 99999999),
+        'account_number'    => '9198' . mt_rand(10000000, 99999999),
+        'ifsc_code'         => 'HDFC0001234',
+        'bank_name'         => 'HDFC BANK',
+        'amount'            => number_format($amount, 2, '.', ''),
+        'charges'           => number_format($payoutCharges, 2, '.', ''),
+        'gst'               => number_format($payoutGst, 2, '.', ''),
+        'provider_charge'   => number_format($payoutProvCharge, 2, '.', ''),
+        'provider_gst'      => number_format($payoutProvGst, 2, '.', ''),
+        'net_amount'        => number_format($payoutNet, 2, '.', ''),
+        'payee_name'        => 'Demo Payout Beneficiary',
+        'order_id'          => 'ORD' . $randomHex2 . '2',
+        'source'            => 'api',
+        'settled'           => 0,
+        'settlement_id'     => 0,
+        'payout_provider'   => $payoutProviderId,
+        'txn_complete_time' => $time,
+        'success_at'        => $time,
+        'created_at'        => $time,
+        'updated_at'        => $time,
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => "Successfully created 2 fake success transactions (1 Payin and 1 Payout of ₹10,000 each) for User ID: {$user->id} ({$user->name})!",
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'merchant_id' => $user->merchant_id,
+            'package' => $packageId,
+            'payin_provider' => $payinProviderId,
+            'payout_provider' => $payoutProviderId,
+        ],
+        'transactions' => [
+            [
+                'service' => 'payin',
+                'txnid' => $payinTxnId,
+                'amount' => 10000.00,
+                'charges' => $payinCharges,
+                'gst' => $payinGst,
+                'provider_charge' => $payinProvCharge,
+                'provider_gst' => $payinProvGst,
+                'net_amount' => $payinNet,
+                'payin_provider' => $payinProviderId,
+                'status' => 'Success',
+                'success_at' => $time
+            ],
+            [
+                'service' => 'payout',
+                'txnid' => $payoutTxnId,
+                'amount' => 10000.00,
+                'charges' => $payoutCharges,
+                'gst' => $payoutGst,
+                'provider_charge' => $payoutProvCharge,
+                'provider_gst' => $payoutProvGst,
+                'net_amount' => $payoutNet,
+                'payout_provider' => $payoutProviderId,
+                'status' => 'Success',
+                'success_at' => $time
+            ]
+        ]
+    ]);
+};
+
+Route::get('/test2', $fakeTxnHandler);
+
+

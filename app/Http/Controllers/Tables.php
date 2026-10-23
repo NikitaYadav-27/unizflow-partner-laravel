@@ -162,8 +162,11 @@ class Tables extends Controller
       $availableSearchKeys = ["txnid","batch_id"];
       $request = request();
       $session = session();
-      $offset = $request->input('start');
-      $limit = $request->input('length');
+      $offset = (int) $request->input('start', 0);
+      $limit = (int) $request->input('length', 10);
+      if ($limit <= 0) {
+          $limit = 10;
+      }
       $searchBy = $request->input('searchBy');
       $searchValue = $request->input('searchValue');
       
@@ -195,18 +198,21 @@ class Tables extends Controller
           $totalTransactions = (new \App\Models\Transaction())->where("settlement_id", $settlement->id)->count();
           $data[] = [
               $index,
-              $settlement->batch_id,
-              "₹ ".$settlement->amount,
-              "₹ ".$settlement->charges,
-              "₹ ".$settlement->gst,
-              "₹ ".$settlement->net_amount,
-              $settlement->settle_to == "wallet"?'<span class="badge bg-primary-transparent"><i class="ti ti-wallet"></i>&nbsp;&nbsp; Wallet</span>':'<span class="badge bg-success-transparent"><i class="ti ti-building-bank"></i>&nbsp;&nbsp; Bank</span', '>', $settlement->txnid,
-              $this->getStatusSpan($settlement->status),
-              $settlement->created_at,
-              $settlement->status == "Success"?$settlement->updated_at:"",
-            //   $settlement->to_time,
+              $settlement->batch_id ?? 'NA',
+              "₹ " . number_format((float) ($settlement->amount ?? 0), 2),
+              "₹ " . number_format((float) ($settlement->charges ?? 0), 2),
+              "₹ " . number_format((float) ($settlement->gst ?? 0), 2),
+              "₹ " . number_format((float) ($settlement->net_amount ?? 0), 2),
+              ($settlement->status == "Success")
+                  ? ($settlement->settle_to == "wallet"
+                      ? '<span class="badge bg-primary-transparent"><i class="ti ti-wallet"></i>&nbsp;&nbsp; Wallet</span>'
+                      : '<span class="badge bg-success-transparent"><i class="ti ti-building-bank"></i>&nbsp;&nbsp; Bank</span>')
+                  : '<span class="badge bg-warning-transparent">Pending</span>',
+              $settlement->txnid ?? 'NA',
+              $this->getStatusSpan($settlement->status ?? 'Pending'),
+              $settlement->created_at ? date('Y-m-d H:i:s', strtotime($settlement->created_at)) : 'NA',
+              ($settlement->status == "Success" && $settlement->updated_at) ? date('Y-m-d H:i:s', strtotime($settlement->updated_at)) : 'NA',
               '<button onclick="navigate(\'/service/collection/settlements/'.$this->encrypt($settlement->id).'\')" class="btn btn-sm btn-primary-transparent"><i class="ti ti-list"></i>&nbsp;&nbsp;'.$totalTransactions.'</button>'
-              
           ];
           $index++;
       }
@@ -250,22 +256,20 @@ class Tables extends Controller
       $index = 1;
 
       foreach ($fundrequests as $fundrequest) {
+          $remarksText = !empty($fundrequest->remarks) ? $fundrequest->remarks : (!empty($fundrequest->reason) ? $fundrequest->reason : "-");
           $data[] = [
- 
               $fundrequest->txnid,
               $fundrequest->bank_name,
               $fundrequest->rrn,
               $fundrequest->mode,
               "₹ ".$fundrequest->amount,
               $this->getStatusSpan($fundrequest->status),
-              $fundrequest->reason,
+              $remarksText,
               $fundrequest->created_at,
-
           ];
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalFundRequest,

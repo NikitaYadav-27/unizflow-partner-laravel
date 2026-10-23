@@ -15,7 +15,7 @@ class LoginBrowser extends Model {
     
     
 
-    public function findBrowserToken(string $browserToken): ?array
+    public function findBrowserToken(string $browserToken): ?self
     {
         return $this->where('browser_token', $browserToken)
                     ->where('created_at', '>=', date('Y-m-d 00:00:00'))

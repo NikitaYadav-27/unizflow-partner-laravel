@@ -32,6 +32,7 @@ class Callback extends Controller
                   "payee_name" => $data->payeeDetails->name,
                   "payee_vpa" => $data->payeeDetails->vpa,
                   "txn_complete_time" => date("Y-m-d H:i:s"),
+                  "success_at" => date("Y-m-d H:i:s"),
                   "rrn" => $utr
                 ]);
 
@@ -79,6 +80,7 @@ class Callback extends Controller
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Success",
                   "txn_complete_time" => date("Y-m-d H:i:s"),
+                  "success_at" => date("Y-m-d H:i:s"),
                   "rrn" => $utr
                 ]);
 
@@ -148,6 +150,7 @@ class Callback extends Controller
                     "payee_name" => $data->payerName ?? '',
                     "payee_vpa" => $data->payerVA ?? '',
                     "txn_complete_time" => $data->TxnCompletionDate ?: date("Y-m-d H:i:s"),
+                    "success_at" => date("Y-m-d H:i:s"),
                     "rrn" => $data->BankRRN ?? ''
                 ]);
 
@@ -199,6 +202,7 @@ class Callback extends Controller
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Success",
                     "txn_complete_time" => date("Y-m-d H:i:s"),
+                    "success_at" => date("Y-m-d H:i:s"),
                     "rrn" => $utr,
                     "optxid" => $data->optxid ?? '',
                     "amount" => $data->amount ?? $transaction['amount']

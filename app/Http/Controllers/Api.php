@@ -1300,11 +1300,17 @@ class Api extends Controller
         
         // Step 3: Update if changed
         if ($remoteStatus && $transaction['status'] !== $remoteStatus) {
-            
-            $transactionModel->where('id', $transaction['id'])->update([
+            $updateData = [
                 'status' => $remoteStatus,
                 'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            ];
+            if (strtolower($remoteStatus) === 'success') {
+                $updateData['success_at'] = date('Y-m-d H:i:s');
+                if (empty($transaction['txn_complete_time'])) {
+                    $updateData['txn_complete_time'] = date('Y-m-d H:i:s');
+                }
+            }
+            $transactionModel->where('id', $transaction['id'])->update($updateData);
             $transaction['status'] = $remoteStatus;
         }
 
