@@ -753,8 +753,8 @@ class Home extends Controller
             ], 400);
         }
         
-        $provider = (new \App\Models\Provider())->where("id",$loggedInUser['payin_provider'])->first();
-        if($provider['used_limit'] > $provider['daily_limit']){
+        $providerRow = (new \App\Models\Provider())->where("id",$loggedInUser['payin_provider'])->first();
+        if($providerRow && $providerRow['used_limit'] > $providerRow['daily_limit']){
             return response()->json([
                 'status' => 'error',
                 'message' => 'Pipe Limit is exceed. Please contact to Administrator'
@@ -792,7 +792,15 @@ class Home extends Controller
         $referenceId = "";
         $orderId = "";
         $txnId = $this->generateTxnId();
-        if($loggedInUser['payin_provider'] == 1){
+        $isBypass = env('PAYMENT_BYPASS', true);
+
+        if ($isBypass) {
+            $tresult = true;
+            $intent = "upi://pay?pa=mockpay@upi&pn=" . urlencode($name) . "&am=" . $amount . "&tr=" . $txnId . "&tn=" . urlencode($remarks ?: 'Payin') . "&cu=INR";
+            $referenceId = "REF" . time() . rand(100, 999);
+            $orderId = "ORD" . time() . rand(100, 999);
+            $mockRrn = "BYPASS" . date('YmdHis') . rand(100, 999);
+        } elseif ($loggedInUser['payin_provider'] == 1) {
             //Solitpay
             $provider = new \App\Libraries\Solitpay();
             $result = $provider->generateQr($txnId, $name, $phone, $email, $amount);
@@ -821,9 +829,9 @@ class Home extends Controller
             \Illuminate\Support\Facades\DB::table('error_logs')->insert([
                 'type' => 'PAYIN',
                 'txnid' => $txnId,
-                'log' => json_encode($result),
+                'log' => json_encode($result ?? []),
                 'provider' => $loggedInUser['payin_provider'],
-                'request' => json_encode($provider->getRequest())
+                'request' => isset($provider) ? json_encode($provider->getRequest()) : '[]'
             ]);
             return response()->json([
                 'status' => 'error',
@@ -831,13 +839,13 @@ class Home extends Controller
             ], 500);
         }
         
-        
-        $transaction->create([
+        $createdTxn = $transaction->create([
             'user_id' => $session->get('user_id'),
             'service' => 'payin',
             'txnid' => $txnId,
             'reference_id' => $referenceId,
-            'status' => 'Pending',
+            'rrn' => $isBypass ? $mockRrn : '',
+            'status' => $isBypass ? 'Success' : 'Pending',
             'name' => $name,
             'email' => $email,
             'phone' => $phone,
@@ -849,30 +857,42 @@ class Home extends Controller
             'order_id' => $orderId,
             'remarks' => $remarks,
             'payin_provider' => $loggedInUser['payin_provider'],
-            'merchant_txnid' => $txnId
+            'merchant_txnid' => $txnId,
+            'payee_name' => $isBypass ? 'Bypass Test' : null,
+            'payee_vpa' => $isBypass ? 'mockpay@upi' : null,
+            'txn_complete_time' => $isBypass ? date('Y-m-d H:i:s') : null,
+            'success_at' => $isBypass ? date('Y-m-d H:i:s') : null
         ]);
         
-        $tr_response = new \App\Models\Transactionres();
-        $tr_response->create([
-            "txnid" => $txnId, 
-            "type" => "request",
-            "data" => json_encode($provider->getRequest())
-        ]);
-        $tr_response->create([
-            "txnid" => $txnId, 
-            "type" => "creation",
-            "data" => json_encode($result)
-        ]);
+        if (!$isBypass && isset($provider) && is_object($provider) && method_exists($provider, 'getRequest')) {
+            $tr_response = new \App\Models\Transactionres();
+            $tr_response->create([
+                "txnid" => $txnId, 
+                "type" => "request",
+                "data" => json_encode($provider->getRequest())
+            ]);
+            $tr_response->create([
+                "txnid" => $txnId, 
+                "type" => "creation",
+                "data" => json_encode($result ?? [])
+            ]);
+        }
+
+        if ($isBypass && isset($createdTxn->id)) {
+            $this->sendWebhook($createdTxn->id);
+        }
         
+        $encKey = env("encryption.key", "unizflow_secure_encryption_key_2026");
         return response()->json([
            'status' => 'success',
-           'message' => 'QR Code Generated Successfully !',
+           'message' => $isBypass ? 'Payment Succeeded (Bypass Mode) !' : 'QR Code Generated Successfully !',
            'data' => [
                'txnid' => $txnId,
                'intent' => $intent,
-               'payment_link' => env("app_baseURL")."payment/".bin2hex(openssl_encrypt($txnId, 'AES-256-CBC', env("encryption.key"), OPENSSL_RAW_DATA, substr(hash('sha256', env("encryption.key")), 0, 16)))
+               'payment_link' => env("app_baseURL", "http://127.0.0.1:8000/")."payment/".bin2hex(openssl_encrypt($txnId, 'AES-256-CBC', $encKey, OPENSSL_RAW_DATA, substr(hash('sha256', $encKey), 0, 16)))
            ]
        ], 200);
+
 
     }
     
@@ -1114,6 +1134,67 @@ class Home extends Controller
 
         // ──────────────────────── 
         $txnId = $this->generateTxnId();
+        $isBypass = env('PAYMENT_BYPASS', true);
+
+        if ($isBypass) {
+            $newBalance = number_format(($loggedInUser['wallet'] - $netAmount), 2, '.', '');
+            $userModel->where('id', $loggedInUser['id'])->update(["wallet" => $newBalance]);
+
+            $walletModel = new \App\Models\WalletTransaction();
+            $walletModel->create([
+                "user_id" => $loggedInUser['id'],
+                "type" => "DEBIT",
+                "txn_type" => "PAYOUT",
+                "txnid" => $txnId,
+                "opening" => $loggedInUser['wallet'],
+                "amount" => number_format($amount, 2, '.', ''),
+                "charges" => number_format($charge['charge'], 2, '.', ''),
+                "gst" => number_format($charge['charge_gst'], 2, '.', ''),
+                "net_amount" => number_format($netAmount, 2, '.', ''),
+                "closing" => $newBalance,
+                "remarks" => !empty($remarks) ? $remarks : "Payout Debit: " . $txnId
+            ]);
+
+            $utr = 'UTR' . date('YmdHis') . rand(100, 999);
+            $refId = 'REF' . time() . rand(100, 999);
+
+            $created = $transaction->create([
+                'user_id' => $loggedInUser['id'],
+                'service' => 'payout',
+                'txnid' => $txnId,
+                'reference_id' => $refId,
+                'rrn' => $utr,
+                'status' => 'Success',
+                'debited' => 1,
+                'processed' => 1,
+                'name' => $name,
+                'phone' => $phone,
+                'account_number' => $account_number,
+                'ifsc_code' => $ifsc_code,
+                'bank_name' => $bank_name,
+                'amount' => number_format($amount, 2, '.', ''),
+                'charges' => number_format($charge['charge'], 2, '.', ''),
+                'gst' => number_format($charge['charge_gst'], 2, '.', ''),
+                'net_amount' => number_format($netAmount, 2, '.', ''),
+                'remarks' => $remarks,
+                'payout_provider' => $loggedInUser['payout_provider'],
+                'merchant_txnid' => $txnId,
+                'txn_complete_time' => date('Y-m-d H:i:s'),
+                'success_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $this->sendWebhook($created->id);
+
+            return response()->json([
+               'status' => 'success',
+               'message' => 'Payout Processed Successfully (Bypass Mode) !',
+               'data' => [
+                   'txnid' => $txnId,
+                   'utr' => $utr,
+                   'status' => 'Success'
+               ]
+            ], 200);
+        }
 
         $transaction->create([
             'user_id' => $loggedInUser['id'],
@@ -1139,6 +1220,16 @@ class Home extends Controller
            'status' => 'success',
            'message' => 'Transaction Initiated Successfully !'
         ], 200);
+    }
+
+    private function sendWebhook($id)
+    {
+        $artisanPath = base_path('artisan');
+        if (strncasecmp(PHP_OS, 'WIN', 3) === 0) {
+            pclose(popen("start /B php \"{$artisanPath}\" webhook:send {$id}", "r"));
+        } else {
+            shell_exec("php \"{$artisanPath}\" webhook:send '{$id}' > /dev/null 2>&1 &");
+        }
     }
 
     private function fail($msg)
@@ -1774,29 +1865,25 @@ class Home extends Controller
                 'message' => 'Invalid IFSC code format'
             ], 422);
         }
-        $url = "https://ifsc.razorpay.com/" . urlencode($ifsc);
-        $response = @file_get_contents($url);
 
-        if ($response === false) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Invalid IFSC code'
-            ], 422);
-        }
         $user_id = $session->get('user_id');
-        $data = json_decode($response, true);
-        $bank = $data['BANK'];
-        $branch = $data['BRANCH'];
+        $ifscData = $this->fetchIfscDetails($ifsc);
+        $bank = $ifscData['BANK'] ?? 'Bank';
+        $branch = $ifscData['BRANCH'] ?? 'Main Branch';
         
-        //check if already any pending account
-        if(\Illuminate\Support\Facades\DB::table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
+        $isBypass = env('PAYMENT_BYPASS', true);
+        
+        //check if already any pending account (skip lock if in bypass)
+        if(!$isBypass && \Illuminate\Support\Facades\DB::table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Your previous bank account is already pending for approval. Please wait for update before updating a new one.'
             ], 422);
         }
         
-        //insert for approval
+        // If bypass, mark as Approved immediately, otherwise Pending
+        $bankStatus = $isBypass ? "Approved" : "Pending";
+
         \Illuminate\Support\Facades\DB::table("users_bank")->insert([
           "user_id" => $user_id,
           "name" => $name,
@@ -1805,16 +1892,68 @@ class Home extends Controller
           "account_ifsc" => $ifsc,
           "bank_name" => $bank,
           "branch" => $branch,
-          "status" => "Pending",
+          "status" => $bankStatus,
           "created_at" => now(),
           "updated_at" => now()
         ]);
         
          return response()->json([
             'status'  => 'success',
-            'message' => 'Bank Account Updated Successfully !'
+            'message' => $isBypass ? 'Bank Account Updated & Approved Successfully !' : 'Bank Account Updated Successfully !'
          ], 200);
     }
+
+    private function fetchIfscDetails($ifsc)
+    {
+        $ifsc = strtoupper(trim($ifsc));
+        $url = "https://ifsc.razorpay.com/" . urlencode($ifsc);
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        $resp = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($resp && $httpCode == 200) {
+            $data = json_decode($resp, true);
+            if (is_array($data) && !empty($data['BANK'])) {
+                return $data;
+            }
+        }
+
+        $bankPrefix = substr($ifsc, 0, 4);
+        $knownBanks = [
+            'SBIN' => 'State Bank of India',
+            'HDFC' => 'HDFC Bank',
+            'ICIC' => 'ICICI Bank',
+            'UTIB' => 'Axis Bank',
+            'KKBK' => 'Kotak Mahindra Bank',
+            'PUNB' => 'Punjab National Bank',
+            'BARB' => 'Bank of Baroda',
+            'CNRB' => 'Canara Bank',
+            'UBIN' => 'Union Bank of India',
+            'BKID' => 'Bank of India',
+            'IOBA' => 'Indian Overseas Bank',
+            'IDFB' => 'IDFC FIRST Bank',
+            'YESB' => 'Yes Bank',
+            'INDB' => 'IndusInd Bank',
+            'AIRP' => 'Airtel Payments Bank',
+            'PYTM' => 'Paytm Payments Bank',
+            'JAKA' => 'Jammu and Kashmir Bank'
+        ];
+
+        return [
+            'BANK' => $knownBanks[$bankPrefix] ?? ("Bank (" . $bankPrefix . ")"),
+            'BRANCH' => 'Main Branch',
+            'IFSC' => $ifsc
+        ];
+    }
+
     
     private function sendEmail($email, $subject, $message){
         try {
