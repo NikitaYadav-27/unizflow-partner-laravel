@@ -3,13 +3,20 @@ namespace App\Libraries;
 
 class Zenova
 {
-    private $base_url = "https://liveapi.zenovaservices.com/api/";
-    private $memberId = "PTN16539017";
-    private $txnPwd   = "12355";
+    private $base_url;
+    private $memberId;
+    private $txnPwd;
 
     private $payload;
     private $headers;
     private $requestUrl;
+
+    public function __construct()
+    {
+        $this->base_url = rtrim(config('providers.zenova.base_url', 'https://liveapi.zenovaservices.com/api/'), '/') . '/';
+        $this->memberId = config('providers.zenova.member_id', 'PTN16539017');
+        $this->txnPwd   = config('providers.zenova.txn_pwd', '12355');
+    }
 
     public function getRequest()
     {
@@ -20,9 +27,7 @@ class Zenova
         ];
     }
 
-    /********************************************
-     *  GENERATE QR  (GET)
-     ********************************************/
+  
     public function generateQr($txnid, $name, $amount)
     {
         $this->payload = [
@@ -56,9 +61,7 @@ class Zenova
     }
 
 
-    /********************************************
-     *  CHECK STATUS  (POST)
-     ********************************************/
+  
     public function checkStatus($txnId, $memberId, $txnPwd)
     {
         $this->payload = [
@@ -90,9 +93,7 @@ class Zenova
     }
 
 
-    /********************************************
-     *  MAKE PAYOUT  (POST + HEADERS)
-     ********************************************/
+    
     public function makePayout($memberId, $txnPwd, $mobile, $account_holder_name, $account_no, $ifsc, $amount, $txnID)
     {
         $this->payload = [
@@ -145,14 +146,11 @@ class Zenova
     }
 
 
-    /********************************************
-     * UNIVERSAL REQUEST FUNCTION
-     ********************************************/
+     
     private function request($method, $url, $params = [], $headers = [], $service = "")
     {
         $curl = curl_init();
 
-        // default headers
         $this->headers = array_merge(["Accept: application/json"], $headers);
 
         if (strtoupper($method) === "GET") {
@@ -166,7 +164,7 @@ class Zenova
                 CURLOPT_HTTPHEADER => $this->headers,
             ]);
 
-        } else { // POST
+        } else { 
             $queryString = ($service === 'checkstatus') ? '?' . http_build_query($params) : '';
             $body        = ($service === 'payout') ? http_build_query($params) : '';
             $this->requestUrl = $url . $queryString;

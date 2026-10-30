@@ -1,16 +1,26 @@
 <?php
 namespace App\Libraries;
+
 class Solitpay
 {
-    private $base_url = "https://partner.solitpay.com/";
-    private $merchantId = "RD7E01BCA1"; //RDD1F87896
-    private $clientSecret = "6fcbdd4708c4450f6e6b7a8e18c43ffcfc2e10546e14f2430f7eeecbc66d";
-    private $enciv = "4gcO6dyLtfMZwfQT";
-    private $enckey = "e39574fc26cc0a88bc9ad307a59466d8ba1e082ed07f258e2ee87fc046719fb3";
+    private $base_url;
+    private $merchantId;
+    private $clientSecret;
+    private $enciv;
+    private $enckey;
     private $payload;
     private $headers;
     private $requestUrl;
     
+    public function __construct()
+    {
+        $this->base_url     = rtrim(config('providers.solitpay.base_url', 'https://partner.solitpay.com/'), '/') . '/';
+        $this->merchantId   = config('providers.solitpay.merchant_id', 'RD7E01BCA1');
+        $this->clientSecret = config('providers.solitpay.client_secret', '6fcbdd4708c4450f6e6b7a8e18c43ffcfc2e10546e14f2430f7eeecbc66d');
+        $this->enciv        = config('providers.solitpay.enc_iv', '4gcO6dyLtfMZwfQT');
+        $this->enckey       = config('providers.solitpay.enc_key', 'e39574fc26cc0a88bc9ad307a59466d8ba1e082ed07f258e2ee87fc046719fb3');
+    }
+
     public function getRequest() {
         return [
            "url" => $this->requestUrl,

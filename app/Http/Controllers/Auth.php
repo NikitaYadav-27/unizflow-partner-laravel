@@ -277,24 +277,21 @@ class Auth extends Controller
             ], 400);
         }
 
-        $user = new User();
-        $userData = $user->where('email', strtolower($email))->first();
+        $userData = User::where('email', strtolower($email))->first();
         if ($userData) {
 
-            $loginAttempt = new \App\Models\LoginAttempt();
-            $loginAttempt->where('user_id', $userData['id'])
-                ->where('created_at', '>=', date("Y-m-d H:i:s", strtotime("-15 minutes")))
-                ->where('verified', -1);
+            $loginAttemptCount = \App\Models\LoginAttempt::where('user_id', $userData['id'])
+                ->where('created_at', '>=', now()->subMinutes(15))
+                ->where('verified', -1)
+                ->count();
 
-            $loginAttemptCount = $loginAttempt->count();
-            if ($loginAttemptCount >= 3) {
+            if ($loginAttemptCount >= 5) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Too many login attempts. Please try again after 15 Minutes.',
                 ], 429);
             }
 
-            $loginAttempt = new \App\Models\LoginAttempt();
             $createdAttempt = \App\Models\LoginAttempt::create([
                 "ip" => request()->ip(),
                 "browser" => $browser,
@@ -328,6 +325,10 @@ class Auth extends Controller
             "verified" => 1,
             "user_id" => $userData['id']
         ]);
+
+        \App\Models\LoginAttempt::where('user_id', $userData['id'])
+            ->where('verified', -1)
+            ->update(["verified" => 2]);
 
         if ($userData['active'] == 0) {
             return response()->json([

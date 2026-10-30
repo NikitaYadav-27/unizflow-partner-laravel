@@ -802,6 +802,16 @@ $settingsModel = new \App\Models\Settings();
                 $referenceId = $result->txnID ?? '';
                 $orderId = $result->txnID ?? '';
             } 
+        } elseif ($loggedInUser['payin_provider'] == 11 || (isset($providerRow['gateway']) && strtolower($providerRow['gateway']) === 'pikelpoint')) {
+            $provider = new \App\Libraries\Pikelpoint();
+            $result = $provider->generateQr($txnId, $name, $phone, $email, $amount);
+            
+            if (isset($result->status) && $result->status == "success") {
+                $tresult = true;
+                $intent = $result->data->paymentData->intent;
+                $referenceId = $result->data->transaction->txnid;
+                $orderId = $result->data->transaction->txnid;
+            }
         }
 
 if(!$tresult) {
@@ -1069,7 +1079,7 @@ $transaction = new \App\Models\Transaction();
             return $this->fail("Today's payout limit exceeded.");
         }
 
-$chargeModel = new \App\Models\Charge();
+        $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payout($amount, $loggedInUser['package'], $loggedInUser['payout_provider']);
 
         if (!$charge) return $this->fail("Slabs are not defined for this amount");
@@ -1143,12 +1153,28 @@ $chargeModel = new \App\Models\Charge();
             ], 200);
         }
 
+        $payoutProviderRow = (new \App\Models\Provider())->where("id", $loggedInUser['payout_provider'])->first();
+        $referenceId = '';
+        $utr = '';
+        $status = 'Pending';
+
+        if ($loggedInUser['payout_provider'] == 12 || (isset($payoutProviderRow['gateway']) && strtolower($payoutProviderRow['gateway']) === 'pikelpoint')) {
+            $provider = new \App\Libraries\Pikelpoint();
+            $result = $provider->makePayout($txnId, $name, $phone, $amount, $account_number, $ifsc_code, $loggedInUser['email'] ?? '', $bank_name);
+            if (isset($result->isSuccess) && $result->isSuccess) {
+                $referenceId = $result->gateway_id ?? '';
+                $utr = $result->utr ?? '';
+                $status = $result->txnStatus ?? 'Pending';
+            }
+        }
+
         $transaction->create([
             'user_id' => $loggedInUser['id'],
             'service' => 'payout',
             'txnid' => $txnId,
-            'reference_id' => '',
-            'status' => 'Pending',
+            'reference_id' => $referenceId,
+            'rrn' => $utr,
+            'status' => $status,
             'name' => $name,
             'phone' => $phone,
             'account_number' => $account_number,
