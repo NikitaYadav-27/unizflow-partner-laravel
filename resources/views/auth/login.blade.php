@@ -5,7 +5,6 @@
 
 <head>
 
-    <!-- Meta Data -->
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -168,7 +167,6 @@ document.querySelector("#loginBtn").onclick = async () => {
     const password = document.querySelector("#password").value.trim();
     $("#loginBtn").html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
     $("#loginBtn").attr("disabled",true);
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         notify("error", "Invalid email address");
@@ -177,7 +175,6 @@ document.querySelector("#loginBtn").onclick = async () => {
         return;
     }
 
-    // Validate password
     if (password.length < 6) {
         notify("error", "Password must be at least 6 characters");
         $("#loginBtn").html('Sign In');
@@ -187,7 +184,6 @@ document.querySelector("#loginBtn").onclick = async () => {
 
     try {
 
-        // Get reCAPTCHA token safely
         let captchaToken = '';
         try {
             if (typeof grecaptcha !== 'undefined' && window.recaptchaSiteKey) {
@@ -207,7 +203,6 @@ document.querySelector("#loginBtn").onclick = async () => {
             console.warn("reCAPTCHA unavailable:", e);
         }
 
-        // Get location
         let coords = { lat: null, lon: null };
         try {
             coords = await new Promise((resolve) => {
@@ -226,14 +221,16 @@ document.querySelector("#loginBtn").onclick = async () => {
             console.error("Location fetch failed", e);
         }
 
-        if (coords.lat == null || coords.lon == null) {
-            notify("error", "Please Allow Location to continue");
-            $("#loginBtn").html('Sign In');
-            $("#loginBtn").removeAttr("disabled");
-            return;
-        }
+       if (
+    (coords.lat == null || coords.lon == null) &&
+    @json(app()->environment('production'))
+) {
+    notify("error", "Please Allow Location to continue");
+    $("#loginBtn").html("Sign In");
+    $("#loginBtn").prop("disabled", false);
+    return;
+}
 
-        // Get device/browser/OS info
         const getBrowserInfo = () => {
             const ua = navigator.userAgent;
             let browser = "Unknown Browser";
@@ -255,7 +252,6 @@ document.querySelector("#loginBtn").onclick = async () => {
         const deviceData = getBrowserInfo();
         const deviceName = navigator.platform || "Unknown Platform";
 
-        // Send data via AJAX
         const payload = {
             email,
             password,
@@ -307,7 +303,6 @@ document.querySelector("#loginBtn").onclick = async () => {
             width: auto;
         }
 
-        /* css for devices width less than 768px */
         @media screen and (max-width: 768px) {
             .col-sm-0 {
                 display: none !important;
@@ -320,7 +315,6 @@ document.querySelector("#loginBtn").onclick = async () => {
         }
         
         .form-control{
-            /*padding: 12px 20px;*/
             border-radius: 13px;
             font-size: 15px;
         }

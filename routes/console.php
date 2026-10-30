@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 
 
 
-Schedule::command('operations:work --once')
+Schedule::command('operations:work')
     ->everyMinute()
     ->withoutOverlapping();
 

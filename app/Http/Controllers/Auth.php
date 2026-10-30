@@ -261,8 +261,13 @@ class Auth extends Controller
         // }
         $email = trim($input->email);
         $password = trim($input->password);
-        $lat = $input->location->lat ?? null;
-        $lon = $input->location->lon ?? null;
+      if (app()->environment('local')) {
+            $lat = $input->location->lat ?? 26.9124;
+            $lon = $input->location->lon ?? 75.7873;
+        } else {
+            $lat = $input->location->lat ?? null;
+            $lon = $input->location->lon ?? null;
+        }
         $browser = $input->browser;
         $device = $input->device;
         $os = $input->os;
@@ -298,7 +303,6 @@ class Auth extends Controller
         $user = new User();
         $userData = $user->where('email', strtolower($email))->first();
         if ($userData) {
-            //check for login attempts exceeded more than 3 in 15 minutes
 
             $loginAttempt = new \App\Models\LoginAttempt();
             $loginAttempt->where('user_id', $userData['id'])
@@ -313,7 +317,6 @@ class Auth extends Controller
                 ], 429);
             }
 
-            //add login Attempt 
             $loginAttempt = new \App\Models\LoginAttempt();
             $createdAttempt = \App\Models\LoginAttempt::create([
                 "ip" => request()->ip(),
@@ -330,7 +333,6 @@ class Auth extends Controller
         }
 
         if (!$userData || !password_verify($password, $userData['password'])) {
-            //login attempt failed
             if($userData){
               \App\Models\LoginAttempt::where("id", $loginAttemptId)->update([
                   "verified" => -1,
@@ -345,7 +347,6 @@ class Auth extends Controller
 
         }
 
-        //login attempt verified
         \App\Models\LoginAttempt::where("id", $loginAttemptId)->update([
             "verified" => 1,
             "user_id" => $userData['id']
@@ -358,7 +359,6 @@ class Auth extends Controller
             ], 403);
         }
 
-        //insert logs to login_logs table
         $login = new \App\Models\Login();
         $session_id =  session_id();
         \App\Models\Login::create([
@@ -381,7 +381,6 @@ class Auth extends Controller
             $loginBrowserModel = new \App\Models\LoginBrowser();
             $browser = $loginBrowserModel->findBrowserToken($browserToken);
             if(isset($browser['user_id']) && $browser['user_id'] == $userData['id']){
-                //update login log
                 $login->where("session_id",$session_id)->update(["phone_verified" => $browser['phone_verified'],
                    "email_verified" => $browser['email_verified']]);
                 
@@ -396,13 +395,15 @@ class Auth extends Controller
             }
         }
 
-        //send otp to email & phone
-        $emailOtp = random_int(111111, 999999);
+        if(app()->environment('local')) {
+            $emailOtp = 654321;
+        } else {
+            $emailOtp = random_int(111111, 999999);
+        }
         $session->put('email_otp', $emailOtp);
       
         $session->put('otp_expires', time() + self::OTP_EXPIRY_SECONDS);
 
-        //send email
         \Illuminate\Support\Facades\Mail::raw("Your OTP for Login is ".$emailOtp, function($message) use ($userData) {
             $message->to($userData['email'])->subject('Your OTP for Login - '.env("APP_NAME").' Account');
         });
@@ -418,7 +419,6 @@ class Auth extends Controller
 
     public function verify_login()
     {
-        //check if there is login log is present in login_logs with current session id within 15 minutes
         $session = session();
         $login = new \App\Models\Login();
         $loginLog = $login->where('session_id', session_id())->orderBy('id', 'DESC')->where('verified', 0)
@@ -433,7 +433,6 @@ class Auth extends Controller
     }
 
     public function verify_login_otp(){
-        //captcha verification
         $input = (object) json_decode(request()->getContent());
         // $result = Recaptcha::verifyV3Captcha($input->captcha);
         // if (!($result->success && $result->score > 0.7)) {
@@ -461,7 +460,6 @@ class Auth extends Controller
             ], 401);
         }
 
-        //check if otp matching with phone otp or email otp .
 
         if (
             !ctype_digit($input->otp) || strlen($input->otp) != 6
@@ -488,7 +486,6 @@ class Auth extends Controller
         $phoneVerified = 0;
 
 
-        //login attempt verified
         \App\Models\Login::where("id", $loginLog['id'])->update([
             "verified" => 1,
             "email_verified" => $emailVerified,
@@ -557,7 +554,6 @@ class Auth extends Controller
            "reset_password_token_time" => time()
         ]);
         
-        //send email
         $link = env("app_baseURL")."auth/reset/password/".$token;
         
         \Illuminate\Support\Facades\Mail::raw("For Reset password please follow link ".$link, function ($message) use ($email) {
@@ -636,12 +632,10 @@ class Auth extends Controller
             ], 400);
         }
         
-        //update user Password
         $userModel->where('id', $user['id'])->update([
           "password" => password_hash($npassword, PASSWORD_DEFAULT)
         ]);
         
-        //make expire Token
         $token = strtolower(substr(str_shuffle(str_repeat('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)), 0, 50));
         $userModel->where('id', $user['id'])->update([
            "reset_password_token" => $token,
