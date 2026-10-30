@@ -4,51 +4,38 @@
 
 <head>
 
-    <!-- Meta Data -->
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title> Dashboard - {!! env("app.title"); !!} </title>
 
-    <!-- Favicon -->
-    <link rel="icon" href="{!! env("favicon"); !!}" type="image/x-icon">
+<link rel="icon" href="{!! env("favicon"); !!}" type="image/x-icon">
 
-    <!-- Choices JS -->
-    <script src="/assets/libs/choices.js/public/assets/scripts/choices.min.js"></script>
+<script src="/assets/libs/choices.js/public/assets/scripts/choices.min.js"></script>
 
-    <!-- Main Theme Js -->
-    <script src="/assets/js/main.js"></script>
+<script src="/assets/js/main.js"></script>
 
-    <!-- Bootstrap Css -->
-    <link id="style" href="/assets/libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link id="style" href="/assets/libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Style Css -->
-    <link href="/assets/css/styles.min.css" rel="stylesheet">
+<link href="/assets/css/styles.min.css" rel="stylesheet">
 
-    <!-- Icons Css -->
-    <link href="/assets/css/icons.css" rel="stylesheet">
+<link href="/assets/css/icons.css" rel="stylesheet">
 
-    <!-- Node Waves Css -->
-    <link href="/assets/libs/node-waves/waves.min.css" rel="stylesheet">
+<link href="/assets/libs/node-waves/waves.min.css" rel="stylesheet">
 
-    <!-- Simplebar Css -->
-    <link href="/assets/libs/simplebar/simplebar.min.css" rel="stylesheet">
+<link href="/assets/libs/simplebar/simplebar.min.css" rel="stylesheet">
 
-    <!-- Color Picker Css -->
-    <link rel="stylesheet" href="/assets/libs/flatpickr/flatpickr.min.css">
+<link rel="stylesheet" href="/assets/libs/flatpickr/flatpickr.min.css">
     <link rel="stylesheet" href="/assets/libs/@simonwep/pickr/themes/nano.min.css">
 
-    <!-- Choices Css -->
-    <link rel="stylesheet" href="/assets/libs/choices.js/public/assets/styles/choices.min.css">
+<link rel="stylesheet" href="/assets/libs/choices.js/public/assets/styles/choices.min.css">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-
-    <link rel="stylesheet" href="/assets/libs/jsvectormap/css/jsvectormap.min.css">
+<link rel="stylesheet" href="/assets/libs/jsvectormap/css/jsvectormap.min.css">
 
     <link rel="stylesheet" href="/assets/libs/swiper/swiper-bundle.min.css">
 
-
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.2.0/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.2.0/css/dataTables.bootstrap5.min.css">
 
     <link rel="stylesheet" href="/assets/libs/sweetalert2/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -56,8 +43,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-
-    <script>window.onloads = []; window.intervals = []; </script>
+<script>window.onloads = []; window.intervals = []; </script>
 
 </head>
 
@@ -154,26 +140,17 @@
         }
     </style>
 
-    <!--Loader -->
-    <!-- <div id="loader" >
-        <img src="/assets/images/media/loader.svg" alt="">
-    </div> -->
-    <!-- Loader -->
-
-    <div class="page">
-        <!-- app-header -->
+<div class="page">
+        
         <header class="app-header">
 
-            <!-- Start::main-header-container -->
-            <div class="main-header-container container-fluid">
+<div class="main-header-container container-fluid">
 
-                <!-- Start::header-content-left -->
-                <div class="header-content-left">
+<div class="header-content-left">
 
-                    <!-- Start::header-element -->
-                    <div class="header-element">
+<div class="header-element">
                         <div class="horizontal-logo">
-                            <a href="/" class="header-logo">
+                            <a href="{{ route('home') }}" class="header-logo">
                                 <img src="{!! env("logo"); !!}" alt="logo" class="desktop-logo">
                                 <img src="{!! env("logo"); !!}" alt="logo" class="toggle-logo">
                                 <img src="{!! env("logo"); !!}" alt="logo" class="desktop-dark">
@@ -183,55 +160,26 @@
                             </a>
                         </div>
                     </div>
-                    <!-- End::header-element -->
 
-                    <!-- Start::header-element -->
-                    <div class="header-element">
-                        <!-- Start::header-link -->
+<div class="header-element">
+                        
                         <a aria-label="Hide Sidebar"
                             class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle"
                             data-bs-toggle="sidebar" href="javascript:void(0);"><span></span></a>
-                        <!-- End::header-link -->
+                        
                     </div>
-                    <!-- End::header-element -->
 
+</div>
 
-                    <!-- <div class="header-element align-items-center">
-                      
-                       <input type="text" class="form-control" id="search" placeholder="Search..." onkeyup="search(this.value)">
-                       
-                    </div> -->
+<div class="header-content-right">
 
-                </div>
-                <!-- End::header-content-left -->
-
-                <!-- Start::header-content-right -->
-                <div class="header-content-right">
-
-                   
-
-
-
-                   
-
-
-                    <!-- Start::header-element -->
-                    <div class="header-element">
-                        <!-- Start::header-link|dropdown-toggle -->
+<div class="header-element">
+                        
                         <a href="javascript:void(0);" class="header-link dropdown-toggle" id="mainHeaderProfile"
                             data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <div class="d-flex align-items-center">
                                 <div class="me-sm-2 me-0">
-                                <span class="avatar avatar-sm me-2 bg-primary"><?php 
-                                  //initials of name
-                                    $name = $user['name'];
-                                    $name = explode(" ", $name);
-                                    $initials = "";
-                                    foreach ($name as $n) {
-                                        $initials .= strtoupper($n[0]);
-                                    }
-                                    echo $initials;
-                                ?></span>
+                                <span class="avatar avatar-sm me-2 bg-primary">{{ collect(explode(' ', $user['name'] ?? ''))->filter()->map(fn($n) => strtoupper($n[0] ?? ''))->implode('') }}</span>
                                 </div>
                                 <div class="d-sm-block d-none">
                                     <p class="fw-semibold mb-0 lh-1">{!! $user['name']; !!}</p>
@@ -239,42 +187,34 @@
                                 </div>
                             </div>
                         </a>
-                        <!-- End::header-link|dropdown-toggle -->
+                        
                         <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
                             aria-labelledby="mainHeaderProfile">
                             
                             <li><a class="dropdown-item d-flex" style="cursor: pointer;"
-                                    onclick="navigate('/user/profile'); closeDropdown(this);"><i
+                                    onclick="navigate('{{ route('profile') }}'); closeDropdown(this);"><i
                                         class="ti ti-user fs-18 me-2 op-7"></i>My Profile</a></li>
-                                        
-                                        
-                            <li><a class="dropdown-item d-flex" style="cursor: pointer;"
-                                    onclick="navigate('/user/change_password'); closeDropdown(this);"><i
+
+<li><a class="dropdown-item d-flex" style="cursor: pointer;"
+                                    onclick="navigate('{{ route('user.change-password') }}'); closeDropdown(this);"><i
                                         class="ti ti-lock fs-18 me-2 op-7"></i>Change Password</a></li>
 
-                            <li><a class="dropdown-item d-flex" href="/user/logout"><i
+                            <li><a class="dropdown-item d-flex" href="{{ route('logout') }}"><i
                                         class="ti ti-logout fs-18 me-2 op-7"></i>Log Out</a></li>
                         </ul>
                     </div>
-                    <!-- End::header-element -->
 
+</div>
 
+</div>
 
-                </div>
-                <!-- End::header-content-right -->
+</header>
 
-            </div>
-            <!-- End::main-header-container -->
+<aside class="app-sidebar sticky" id="sidebar">
 
-        </header>
-        <!-- /app-header -->
-        <!-- Start::app-sidebar -->
-        <aside class="app-sidebar sticky" id="sidebar">
-
-            <!-- Start::main-sidebar-header -->
-            <div class="main-sidebar-header">
+<div class="main-sidebar-header">
                 <div class="d-flex gap-2 justify-content-center align-items-center">
-                    <a href="/" class="header-logo">
+                    <a href="{{ route('home') }}" class="header-logo">
                         <img src="{!! env("logo"); !!}" alt="logo" style="height: 50px;" class="desktop-logo">
                         <img src="{!! env("favicon"); !!}" alt="logo" style="height: 50px;" class="toggle-logo">
                         <img src="{!! env("logo"); !!}" alt="logo" style="height: 50px;" class="desktop-dark">
@@ -286,14 +226,10 @@
                 </div>
 
             </div>
-            <!-- End::main-sidebar-header -->
 
+<div class="main-sidebar" id="sidebar-scroll">
 
-            <!-- Start::main-sidebar -->
-            <div class="main-sidebar" id="sidebar-scroll">
-
-                <!-- Start::nav -->
-                <nav class="main-menu-container nav nav-pills flex-column sub-open">
+<nav class="main-menu-container nav nav-pills flex-column sub-open">
                     <div class="slide-left" id="slide-left">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24"
                             viewBox="0 0 24 24">
@@ -302,33 +238,20 @@
                     </div>
                     
                     <ul class="main-menu">
-                        <!-- Start::slide__category -->
+                        
                         <li class="slide__category"><span class="category-name"></span></li>
-                        <!-- End::slide__category -->
 
-
-
-                        <!-- Start::slide -->
-                        <li class="slide">
-                            <a onclick="navigate('/user/dashboard'); activeNavigation(this);"
-                                class="side-menu__item <?php if ($page == "dashboard") {
-                                    echo "active";
-                                } ?>">
+<li class="slide">
+                            <a onclick="navigate('{{ route('dashboard') }}'); activeNavigation(this);"
+                                class="side-menu__item {{ ($page ?? '') == 'dashboard' ? 'active' : '' }}">
                                 <i class="ti ti-home side-menu__icon"></i>
                                 <span class="side-menu__label">Dashboard</span>
                             </a>
                         </li>
-                        <!-- End::slide -->
-                        
-                        
 
+<li class="slide__category"><span class="category-name">Services</span></li>
 
-                        
-                        <li class="slide__category"><span class="category-name">Services</span></li>
-
-          
-                        <!-- Start::slide -->
-                        <li class="slide has-sub {!! in_array($page,["upi", "static","payin-transactions","settlements"])?"open":"" !!}">
+<li class="slide has-sub {!! in_array($page,["upi", "static","payin-transactions","settlements"])?"open":"" !!}">
                             <a class="side-menu__item">
                                 <i class="ti ti-inbox side-menu__icon"></i>
                                 <span class="side-menu__label">Payin</span>
@@ -336,17 +259,14 @@
                             </a>
                             <ul class="slide-menu child1">
                                
-                                <li class="slide"><a onclick="navigate('/service/collection/upi'); activeNavigation(this);" class="side-menu__item {!! $page == "upi"?"active":"" !!}"><i class="ti ti-qrcode mx-2"></i> Generate QR</a></li>
-                
-                              
-                                <li class="slide"><a onclick="navigate('/service/collection/transactions'); activeNavigation(this);" class="side-menu__item {!! $page == "payin-transactions"?"active":"" !!}"><i class="ti ti-history mx-2"></i>History</a></li>
-                                <li class="slide"><a onclick="navigate('/service/collection/settlements'); activeNavigation(this);" class="side-menu__item {!! $page == "settlements"?"active":"" !!}"><i class="ti ti-receipt mx-2"></i>Settlements</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('service.collection.upi') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "upi"?"active":"" !!}"><i class="ti ti-qrcode mx-2"></i> Generate QR</a></li>
+
+<li class="slide"><a onclick="navigate('{{ route('service.collection.transactions') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "payin-transactions"?"active":"" !!}"><i class="ti ti-history mx-2"></i>History</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('service.collection.settlements') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "settlements"?"active":"" !!}"><i class="ti ti-receipt mx-2"></i>Settlements</a></li>
                             </ul>
                         </li>
-                        <!-- End::slide -->
 
-
-                        <li class="slide has-sub {!! in_array($page,["payout", "bulk-payout","payout-transactions"])?"open":"" !!}">
+<li class="slide has-sub {!! in_array($page,["payout", "bulk-payout","payout-transactions"])?"open":"" !!}">
                             <a class="side-menu__item">
                                 <i class="ti ti-cash side-menu__icon"></i>
                                 <span class="side-menu__label">Payout</span>
@@ -354,18 +274,15 @@
                             </a>
                             <ul class="slide-menu child1">
                                
-                                <li class="slide"><a onclick="navigate('/service/payout/create'); activeNavigation(this);" class="side-menu__item {!! $page == "payout"?"active":"" !!}"><i class="ti ti-arrow-up-right mx-2"></i> Make Payout</a></li>
-                                <li class="slide"><a onclick="navigate('/service/payout/transactions'); activeNavigation(this);" class="side-menu__item {!! $page == "payout-transactions"?"active":"" !!}"><i class="ti ti-history mx-2"></i>Payout History</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('service.payout.create') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "payout"?"active":"" !!}"><i class="ti ti-arrow-up-right mx-2"></i> Make Payout</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('service.payout.transactions') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "payout-transactions"?"active":"" !!}"><i class="ti ti-history mx-2"></i>Payout History</a></li>
 
                             </ul>
                         </li>
 
+<li class="slide__category"><span class="category-name">Manage</span></li>
 
-                        <li class="slide__category"><span class="category-name">Manage</span></li>
-
-                      
-
-                        <li class="slide has-sub {!! in_array($page,["ledger", "topup"])?"open":"" !!}">
+<li class="slide has-sub {!! in_array($page,["ledger", "topup"])?"open":"" !!}">
                             <a class="side-menu__item">
                                 <i class="ti ti-wallet side-menu__icon"></i>
                                 <span class="side-menu__label">Wallet</span>
@@ -373,73 +290,43 @@
                             </a>
                             <ul class="slide-menu child1">
                             
-                                <li class="slide"><a onclick="navigate('/wallet/ledger'); activeNavigation(this);" class="side-menu__item {!! $page == "ledger"?"active":"" !!}"><i class="ti ti-file-text mx-2"></i>Wallet Ledger</a></li>
-                                <li class="slide"><a onclick="navigate('/wallet/topup'); activeNavigation(this);" class="side-menu__item {!! $page == "topup"?"active":"" !!}"><i class="ti ti-circle-plus mx-2"></i>Wallet Topup</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('wallet.ledger') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "ledger"?"active":"" !!}"><i class="ti ti-file-text mx-2"></i>Wallet Ledger</a></li>
+                                <li class="slide"><a onclick="navigate('{{ route('wallet.topup') }}'); activeNavigation(this);" class="side-menu__item {!! $page == "topup"?"active":"" !!}"><i class="ti ti-circle-plus mx-2"></i>Wallet Topup</a></li>
                             </ul>
                         </li>
 
-
-                      
-                        
-                        <li class="slide has-sub {!! in_array($page,["download"])?"open":"" !!}">
+<li class="slide has-sub {!! in_array($page,["download"])?"open":"" !!}">
                             <a class="side-menu__item">
                                 <i class="ti ti-report side-menu__icon"></i>
                                 <span class="side-menu__label">Reports</span>
                                 <i class="fe fe-chevron-right side-menu__angle"></i>
                             </a>
                             <ul class="slide-menu child1">
-                            
-                                <!--<li class="slide"><a onclick="navigate('/reports/transactions'); activeNavigation(this);" class="side-menu__item {!! $page=="chargebacks"?"active":"" !!}"><i class="ti ti-arrows-right-left mx-2"></i>Transactions</a></li>-->
-                                
-                                <!--<li class="slide"><a onclick="navigate('/reports/settlements'); activeNavigation(this);" class="side-menu__item {!! $page=="export"?"active":"" !!}"><i class="ti ti-receipt mx-2"></i>Settlements</a></li>-->
-                                
-                                
-                                <li class="slide"><a onclick="navigate('/reports/download'); activeNavigation(this);" class="side-menu__item {!! $page=="download"?"active":"" !!}"><i class="ti ti-download mx-2"></i>Download</a></li>
+
+<li class="slide"><a onclick="navigate('{{ route('reports.download') }}'); activeNavigation(this);" class="side-menu__item {!! $page=="download"?"active":"" !!}"><i class="ti ti-download mx-2"></i>Download</a></li>
                             </ul>
                         </li>
 
-                      
-                    
-                    
-                      <li class="slide">
-                            <?php /* <a href='{!! env("api.docs") !!}'
-                                class="side-menu__item">
-                                <i class="ti ti-file-code side-menu__icon"></i>
-                                <span class="side-menu__label">Api Documents</span>
-                            </a> */ ?>
-                            <a href='/api-docs' target="_blank"
+<li class="slide">
+                            <a href='{{ route('api-docs') }}' target="_blank"
                                 class="side-menu__item">
                                 <i class="ti ti-file-code side-menu__icon"></i>
                                 <span class="side-menu__label">Api Documents</span>
                             </a>
                         </li>
-                        
-                        
 
-
-
-                    
-
-
-
-
-
-
-                    </ul>
+</ul>
                     <div class="slide-right" id="slide-right"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191"
                             width="24" height="24" viewBox="0 0 24 24">
                             <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>
                         </svg></div>
                 </nav>
-                <!-- End::nav -->
 
-            </div>
-            <!-- End::main-sidebar -->
+</div>
 
-        </aside>
-        <!-- End::app-sidebar -->
+</aside>
 
-        <style>
+<style>
             .app-sidebar .side-menu__item:hover {
                 background-color: transparent !important;
                 cursor: pointer;
@@ -464,9 +351,6 @@
             }
         </style>
 
-
-
-        <!-- Start::app-content -->
-        <div class="main-content app-content">
+<div class="main-content app-content">
 
             <div class="container-fluid" id="innerBody">

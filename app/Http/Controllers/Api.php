@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Libraries\Validators;
 use App\Models\ApiRequest;
 use Exception;
+use Illuminate\Support\Facades\Http;
 
 class Api extends Controller
 {
@@ -99,10 +100,7 @@ class Api extends Controller
             ], 401);
         }
 
-        /**************************************
-         * PROVIDER WISE TOKEN HANDLING
-         **************************************/
-        if ($user['payin_provider'] == 1 || $user['payout_provider'] == 2) {
+if ($user['payin_provider'] == 1 || $user['payout_provider'] == 2) {
             $keyModel = new Key();
             $this->keys = $keyModel->findUser($user['id']);
 
@@ -133,7 +131,6 @@ class Api extends Controller
                 ], 401);
             }
 
-            // Expiry
             if (time() - intval($data['timestamp']) > 300) {
                 return response()->json([
                     "status" => "error",
@@ -164,11 +161,7 @@ class Api extends Controller
             }
         } 
 
-        /**************************************
-         * COMMON VALIDATIONS
-         **************************************/
-        
-        if (!preg_match('/^[a-zA-Z0-9]{5,20}$/', $data['reqId'])) {
+if (!preg_match('/^[a-zA-Z0-9]{5,20}$/', $data['reqId'])) {
             return response()->json([
                 "status" => "error",
                 "error" => true,
@@ -185,10 +178,7 @@ class Api extends Controller
             ], 409);
         }
 
-        /**************************************
-         * REQUEST LOGGING
-         **************************************/
-        $headers = $this->request->getHeaders();
+$headers = $this->request->getHeaders();
         $formattedHeaders = [];
 
         foreach ($headers as $name => $values) {
@@ -211,11 +201,11 @@ class Api extends Controller
             [
                 "reqid" => $data['reqId'],
                 "user_id" => $user['id'],
-                "path" => $_SERVER['REQUEST_URI'],
-                "method" => $_SERVER['REQUEST_METHOD'],
+                "path" => request()->getRequestUri(),
+                "method" => request()->method(),
                 "ip" => $ipAddress,
                 "headers" => $jsonHeaders,
-                "payload" => json_encode((object) json_decode(request()->getContent())),
+                "payload" => json_encode(request()->all()),
             ],
             true
         );
@@ -223,8 +213,7 @@ class Api extends Controller
         return null;
     }
 
-
-    private function validateHeaders_old()
+private function validateHeaders_old()
     {
         $this->startTime = microtime(true);
         $merchantId = $this->request->getHeaderLine('Merchant-id');
@@ -323,7 +312,6 @@ class Api extends Controller
             ], 401);
         }
 
-        // Check if token is expired (more than 5 minutes)
         $currentTime = time();
         if ($currentTime - intval($data['timestamp']) > 300) {
             return response()->json([
@@ -333,7 +321,6 @@ class Api extends Controller
             ], 401);
         }
 
-        //check if req id already used
         $this->apiRequestModel = new ApiRequest();
         if ($this->apiRequestModel->isReqIdExists($data['reqId'])) {
             return response()->json([
@@ -347,7 +334,6 @@ class Api extends Controller
 
         $formattedHeaders = [];
         foreach ($headers as $name => $values) {
-            // getValueLine() gives the header value as a string
             $formattedHeaders[$name] = $values->getValueLine();
         }
 
@@ -363,16 +349,15 @@ class Api extends Controller
             ])->setStatusCode(400);
         }
 
-        //Insert Request
         $this->apiRequestId = $this->apiRequestModel->create(
             [
                 "reqid" => $data['reqId'],
                 "user_id" => $user['id'],
-                "path" => $_SERVER['REQUEST_URI'],
-                "method" => $_SERVER['REQUEST_METHOD'],
+                "path" => request()->getRequestUri(),
+                "method" => request()->method(),
                 "ip" => $ipAddress,
                 "headers" => $jsonHeaders,
-                "payload" => json_encode((object) json_decode(request()->getContent())),
+                "payload" => json_encode(request()->all()),
             ],
             true
         );
@@ -401,10 +386,9 @@ class Api extends Controller
             return $validation;
         }
         
-        $data = (object) json_decode(request()->getContent());
-        
-        
-        $settingsModel = new \App\Models\Settings();
+        $data = (object) request()->all();
+
+$settingsModel = new \App\Models\Settings();
         if(!$settingsModel->isPayinEnabled()){
             return $this->respond([
                     'status' => 'error',
@@ -421,7 +405,6 @@ class Api extends Controller
             ],401);
         }
 
-        // Name validation
         if (!Validators::name($data->name ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -430,7 +413,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Email validation
         if (!Validators::email($data->email ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -439,7 +421,6 @@ class Api extends Controller
             ], 400);
         }
 
-        // Phone validation
         if (!Validators::phone($data->phone ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -448,7 +429,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Amount validation
         if (!Validators::amount($data->amount ?? 0)) {
             return $this->respond([
                     'status' => 'error',
@@ -465,7 +445,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Merchant Txn ID validation
         if (strlen($data->merchantTxnId ?? '') < 5) {
             return $this->respond([
                     'status' => 'error',
@@ -474,7 +453,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Notes length validation
         if (strlen($data->notes ?? '') > 100) {
             return $this->respond([
                     'status' => 'error',
@@ -483,7 +461,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Duplicate transaction check
         $transactionModel = new \App\Models\Transaction();
         if ($transactionModel->isMerchantTxnIdExists($data->merchantTxnId)) {
             return $this->respond([
@@ -492,9 +469,8 @@ class Api extends Controller
                     'message' => 'Duplicate error: Merchant Transaction ID already exists.',
             ],409);
         }
-        
-        
-        if($this->user['todays_payin'] > $this->user['payin_limit']) {
+
+if($this->user['todays_payin'] > $this->user['payin_limit']) {
             return $this->respond([
                     'status' => 'error',
                     'error' => true,
@@ -502,8 +478,7 @@ class Api extends Controller
             ],429);
         }
 
-        
-        $provider = (new \App\Models\Provider())->where("id",$this->user['payin_provider'])->first();
+$provider = (new \App\Models\Provider())->where("id",$this->user['payin_provider'])->first();
         if($provider['used_limit'] > $provider['daily_limit']){
              return $this->respond([
                     'status' => 'error',
@@ -512,7 +487,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Calculate charge based on slab
         $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payin($data->amount, $this->user['package'], $this->user['payin_provider']);
 
@@ -531,7 +505,6 @@ class Api extends Controller
         $txnId = $this->generateTxnId();
         $result = null;
         if($this->user['payin_provider'] == 1){
-            //Solitpay
             $provider = new \App\Libraries\Solitpay();
             $result = $provider->generateQr($txnId, $data->name,$data->phone,$data->email, $data->amount);
             if(isset($result->status) && $result->status == "success") { 
@@ -541,9 +514,8 @@ class Api extends Controller
                 $orderId = $result->data->transaction->txnid;
             }
         }
-        
-        
-        $transaction = new \App\Models\Transaction();
+
+$transaction = new \App\Models\Transaction();
         $transaction->create([
             'user_id' => $this->user['id'],
             'service' => 'payin',
@@ -576,9 +548,8 @@ class Api extends Controller
             "type" => "creation",
             "data" => json_encode($result)
         ]);
-        
-        
-        return $this->respond([
+
+return $this->respond([
             'status' => 'success',
             'error' => false,
             'message' => 'QR Code Generated Successfully !',
@@ -600,9 +571,8 @@ class Api extends Controller
                 "datetime" => date("Y-m-d H:i:s")
             ]
         ],200);
-        
-        
-    }
+
+}
 
     public function generate_qr()
     {
@@ -610,10 +580,9 @@ class Api extends Controller
             return $validation;
         }
         
-        $data = (object) json_decode(request()->getContent());
-        
-        
-        $settingsModel = new \App\Models\Settings();
+        $data = (object) request()->all();
+
+$settingsModel = new \App\Models\Settings();
         if(!$settingsModel->isPayinEnabled()){
             return $this->respond([
                     'status' => 'error',
@@ -630,7 +599,6 @@ class Api extends Controller
             ],401);
         }
 
-        // Name validation
         if (!Validators::name($data->name ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -639,7 +607,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Email validation
         if (!Validators::email($data->email ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -648,7 +615,6 @@ class Api extends Controller
             ], 400);
         }
 
-        // Phone validation
         if (!Validators::phone($data->phone ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -657,7 +623,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Amount validation
         if (!Validators::amount($data->amount ?? 0)) {
             return $this->respond([
                     'status' => 'error',
@@ -674,7 +639,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Merchant Txn ID validation
         if (strlen($data->merchantTxnId ?? '') < 5) {
             return $this->respond([
                     'status' => 'error',
@@ -683,7 +647,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Notes length validation
         if (strlen($data->notes ?? '') > 100) {
             return $this->respond([
                     'status' => 'error',
@@ -692,7 +655,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Duplicate transaction check
         $transactionModel = new \App\Models\Transaction();
         if ($transactionModel->isMerchantTxnIdExists($data->merchantTxnId)) {
             return $this->respond([
@@ -701,9 +663,8 @@ class Api extends Controller
                     'message' => 'Duplicate error: Merchant Transaction ID already exists.',
             ],409);
         }
-        
-        
-        if($this->user['todays_payin'] > $this->user['payin_limit']) {
+
+if($this->user['todays_payin'] > $this->user['payin_limit']) {
             return $this->respond([
                     'status' => 'error',
                     'error' => true,
@@ -711,8 +672,7 @@ class Api extends Controller
             ],429);
         }
 
-        
-        $provider = (new \App\Models\Provider())->where("id",$this->user['payin_provider'])->first();
+$provider = (new \App\Models\Provider())->where("id",$this->user['payin_provider'])->first();
         if($provider['used_limit'] > $provider['daily_limit']){
              return $this->respond([
                     'status' => 'error',
@@ -721,7 +681,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Calculate charge based on slab
         $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payin($data->amount, $this->user['package'], $this->user['payin_provider']);
 
@@ -748,7 +707,6 @@ class Api extends Controller
             $orderId = "ORD" . time() . rand(100, 999);
             $mockRrn = "BYPASS" . date('YmdHis') . rand(100, 999);
         } elseif ($this->user['payin_provider'] == 1) {
-            //Solitpay
             $provider = new \App\Libraries\Solitpay();
             $result = $provider->generateQr($txnId, $data->name,$data->phone,$data->email, $data->amount);
             if(isset($result->status) && $result->status == "success") { 
@@ -758,7 +716,6 @@ class Api extends Controller
                 $orderId = $result->data->transaction->txnid;
             }
         } elseif ($this->user['payin_provider'] == 3) {
-            // Zenova Integration
             $provider = new \App\Libraries\Zenova();
             $result = $provider->generateQr($txnId, $data->name, $data->amount);
             
@@ -847,17 +804,13 @@ class Api extends Controller
             ]
         ],200);
 
-        
-        
-    }
+}
 
     public function generate_qr_new_old()
     {
-        $data = (object) json_decode(request()->getContent());
+        $data = (object) request()->all();
 
-        // Zenova (provider = 3) ke liye validateHeaders skip hoga
         if (($data->memberid ?? null) && ($data->txnpwd ?? null)) {
-            // Zenova ke liye memberid se user nikal lo
             $userModel = new \App\Models\User();
             $this->user = $userModel->where('merchant_id', $data->memberid)->where('active', 1)->first();
             
@@ -871,7 +824,6 @@ class Api extends Controller
             
         } 
         else {
-            // Solitpay (or other providers) -> validateHeaders() call
             if ($validation = $this->validateHeaders()) {
                 return $validation;
             }
@@ -896,9 +848,7 @@ class Api extends Controller
 
         $merchantTxnId = "";
         
-        // validation alag-alag provider ke hisab se
         if ($this->user['payin_provider'] == 1) {
-            // Solitpay validations
             if (!Validators::name($data->name ?? '')) {
                 return $this->respond([
                     'status' => 'error',
@@ -958,7 +908,6 @@ class Api extends Controller
             $merchantTxnId = $data->merchantTxnId ?? '';
         } 
         elseif ($this->user['payin_provider'] == 3) {
-            // Zenova validations
             if (empty($data->memberid) || empty($data->txnpwd) || empty($data->name) || empty($data->amount) || empty($data->txnid)) {
                 return $this->respond([
                     'status' => 'error',
@@ -983,11 +932,9 @@ class Api extends Controller
                 ], 400);
             }
 
-            // Zenova me txnid hi merchantTxnId ki tarah use hoga
             $merchantTxnId = $data->txnid ?? '';
         }
         
-        // Duplicate transaction check
         $transactionModel = new \App\Models\Transaction();
         if ($transactionModel->isMerchantTxnIdExists($merchantTxnId)) {
             return $this->respond([
@@ -1014,7 +961,6 @@ class Api extends Controller
             ], 400);
         }
 
-        // Calculate charge based on slab
         $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payin($data->amount, $this->user['package'], $this->user['payin_provider']);
 
@@ -1034,7 +980,6 @@ class Api extends Controller
         $result = null;
 
         if ($this->user['payin_provider'] == 1) {
-            // Solitpay
             $provider = new \App\Libraries\Solitpay();
             $result = $provider->generateQr($txnId, $data->name, $data->phone, $data->email, $data->amount);
             if (isset($result->status) && $result->status == "success") { 
@@ -1045,7 +990,6 @@ class Api extends Controller
             }
         } 
         elseif ($this->user['payin_provider'] == 3) {
-            // Zenova Integration
             $provider = new \App\Libraries\Zenova();
             $result = $provider->generateQr($data->txnid, $data->memberid, $data->txnpwd, $data->name, $data->amount);
             
@@ -1064,7 +1008,6 @@ class Api extends Controller
             }
         }
         
-        // Transaction record
         $transaction = new \App\Models\Transaction();
         $transaction->create([
             'user_id' => $this->user['id'],
@@ -1135,7 +1078,7 @@ class Api extends Controller
             return $validation;
         }
 
-        $data = json_decode(request()->getContent());
+        $data = request()->all();
         if(!isset($data['txnid']) && !isset($data['merchantTxnId'])){
             return $this->respond([
               "status" => "error",
@@ -1209,11 +1152,9 @@ class Api extends Controller
 
     public function check_status()
     {
-        $data = json_decode(request()->getContent());
+        $data = request()->all();
 
-        // Step 0: Detect Provider
         if (!empty($data['MemberId']) && !empty($data['TxnPwd'])) {
-            // Zenova authentication (no header validation)
             $userModel = new \App\Models\User();
             $this->user = $userModel
                 ->where('merchant_id', $data['MemberId'])
@@ -1228,7 +1169,6 @@ class Api extends Controller
                 ], 401);
             }
 
-            // Zenova-specific transaction ID
             $txnId = $data['TxnId'] ?? null;
             if (empty($txnId)) {
                 return $this->respond([
@@ -1241,7 +1181,6 @@ class Api extends Controller
             $transactionModel = new \App\Models\Transaction();
             $transaction = $transactionModel->findTxnByMerchantId($txnId);
         } else {
-            // Solitpay or others → validate headers
             if ($validation = $this->validateHeaders()) {
                 return $validation;
             }
@@ -1277,7 +1216,6 @@ class Api extends Controller
             }
         }
         
-        // Step 1: Validate transaction
         if (!isset($transaction['id']) || $transaction['user_id'] != $this->user['id']) {
             return $this->respond([
                 "status" => "error",
@@ -1288,9 +1226,7 @@ class Api extends Controller
 
         $remoteStatus = null;
 
-        // Step 2: Provider-wise status check
         if ($this->user['payin_provider'] == 1) {
-            // Solitpay Provider
             $solitpay = new \App\Libraries\Solitpay();
             $solitResponse = $solitpay->getStatus([
                 "txnid" => $transaction['txnid'],
@@ -1302,7 +1238,6 @@ class Api extends Controller
             }
 
         } elseif ($this->user['payin_provider'] == 3) {
-            // Zenova Provider
             $zenova = new \App\Libraries\Zenova();
             $zenovaResponse = $zenova->checkStatus($data['TxnId'], $data['MemberId'], $data['TxnPwd']);
             
@@ -1318,7 +1253,6 @@ class Api extends Controller
             }
         }
         
-        // Step 3: Update if changed
         if ($remoteStatus && $transaction['status'] !== $remoteStatus) {
             $updateData = [
                 'status' => $remoteStatus,
@@ -1334,7 +1268,6 @@ class Api extends Controller
             $transaction['status'] = $remoteStatus;
         }
 
-        // Step 4: Unified response
         return $this->respond([
             "status" => "success",
             "error" => false,
@@ -1378,7 +1311,7 @@ class Api extends Controller
             return $validation;
         }
 
-        $data = (object) json_decode(request()->getContent());
+        $data = (object) request()->all();
         
         $settingsModel = new \App\Models\Settings();
         if(!$settingsModel->isPayoutEnabled()){
@@ -1397,7 +1330,6 @@ class Api extends Controller
             ],401);
         }
 
-        // Name validation
         if (!Validators::name($data->name ?? '')) {
             return $this->respond([
                     'status' => 'error',
@@ -1406,9 +1338,7 @@ class Api extends Controller
             ],400);
         }
 
-
-        // Phone validation
-        if (!Validators::phone($data->phone ?? '')) {
+if (!Validators::phone($data->phone ?? '')) {
             return $this->respond([
                     'status' => 'error',
                     'error' => true,
@@ -1416,7 +1346,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Amount validation
         if (!Validators::amount($data->amount ?? 0)) {
             return $this->respond([
                     'status' => 'error',
@@ -1425,7 +1354,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Merchant Txn ID validation
         if (strlen($data->merchantTxnId ?? '') < 5) {
             return $this->respond([
                     'status' => 'error',
@@ -1434,7 +1362,6 @@ class Api extends Controller
             ],400);
         }
 
-        // Notes length validation
         if (strlen($data->notes ?? '') > 100) {
             return $this->respond([
                     'status' => 'error',
@@ -1442,10 +1369,8 @@ class Api extends Controller
                     'message' => 'Validation error: Notes exceed maximum length of 100 characters.',
             ],400);
         }
-        
-        
-        //validate account number
-        if (!Validators::accountNumber($data->account_number ?? 0)) {
+
+if (!Validators::accountNumber($data->account_number ?? 0)) {
             return $this->respond([
                     'status' => 'error',
                     'error' => true,
@@ -1464,7 +1389,6 @@ class Api extends Controller
         $ifscInfo = $this->fetchIfscDetails($data->ifsc_code);
         $bankName = $ifscInfo['BANK'] ?? 'Bank';
 
-        // Duplicate transaction check
         $transactionModel = new \App\Models\Transaction();
         if ($transactionModel->isMerchantTxnIdExists($data->merchantTxnId)) {
             return $this->respond([
@@ -1481,9 +1405,8 @@ class Api extends Controller
                     'message' => 'Transaction failed. Reason: Exceeds per-transaction limit of ₹'.$this->user['payout_per_limit'],
             ],400);
         }
-        
-        
-        if($this->user['todays_payout'] > $this->user['payout_limit']) {
+
+if($this->user['todays_payout'] > $this->user['payout_limit']) {
             return $this->respond([
                     'status' => 'error',
                     'error' => true,
@@ -1491,7 +1414,6 @@ class Api extends Controller
             ],429);
         }
 
-        // Calculate charge based on slab
         $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payout($data->amount, $this->user['package'], $this->user['payout_provider']);
 
@@ -1513,7 +1435,6 @@ class Api extends Controller
             ],400);
         }
         
-        //add transaction
         $txnId = $this->generateTxnId();
         $transaction = new \App\Models\Transaction();
         $transaction->create([
@@ -1536,9 +1457,8 @@ class Api extends Controller
             'source' => 'api',
             'merchant_txnid' => $data->merchantTxnId
         ]);
-        
-        
-        return $this->respond([
+
+return $this->respond([
             'status' => 'success',
             'error' => false,
             "message" => "Transaction initialized successfully!",
@@ -1556,15 +1476,13 @@ class Api extends Controller
                 
             ]
         ],200);
-        
-        
-    }
+
+}
 
     public function make_payout()
     { 
-        $data = (object) json_decode(request()->getContent());
+        $data = (object) request()->all();
         
-        // Zenova (provider = 3) validation via memberid and txnpwd
         if (($data->memberid ?? null) && ($data->txnpwd ?? null)) {
             
             $userModel = new \App\Models\User();
@@ -1581,7 +1499,6 @@ class Api extends Controller
                 ], 401);
             }
         } else {
-            // Solitpay header validation
             if ($validation = $this->validateHeaders()) {
                 return $validation;
             }
@@ -1604,7 +1521,6 @@ class Api extends Controller
             ], 401);
         }
        
-        // Zenova Provider (ID = 3)
         if ($this->user['payout_provider'] == 4) {
             if (empty($data->memberid) || empty($data->txnpwd) || empty($data->mobile) || empty($data->account_holder_name) || empty($data->account_no) || empty($data->ifsc) || empty($data->amount) || empty($data->txnID)) {
                 return $this->respond([
@@ -1615,7 +1531,6 @@ class Api extends Controller
             }
         } 
         else {
-            // Solitpay Provider (ID = 2)
             if (!Validators::name($data->name ?? '')) {
                 return $this->respond(['status' => 'error','error' => true,'message' => 'Validation error: Full name is required.'],400);
             }
@@ -1641,19 +1556,16 @@ class Api extends Controller
             }
         }
 
-        // Fetch Bank Name (same for both providers)
         $ifscCode = $this->user['payout_provider'] == 4 ? $data->ifsc : $data->ifsc_code;
         $ifscInfo = $this->fetchIfscDetails($ifscCode);
         $bankName = $ifscInfo['BANK'] ?? 'Bank';
 
-        // Check duplicate Txn ID
         $transactionModel = new \App\Models\Transaction();
         $merchantTxnId = $this->user['payout_provider'] == 4 ? $data->txnID : $data->merchantTxnId;
         if ($transactionModel->isMerchantTxnIdExists($merchantTxnId)) {
             return $this->respond(['status' => 'error','error' => true,'message' => 'Duplicate error: Merchant Transaction ID already exists.'],409);
         }
 
-        // Balance and Limit checks
         if ($data->amount > $this->user['payout_per_limit']) {
             return $this->respond(['status' => 'error','error' => true,'message' => 'Exceeds per-transaction limit ₹'.$this->user['payout_per_limit']],400);
         }
@@ -1662,7 +1574,6 @@ class Api extends Controller
             return $this->respond(['status' => 'error','error' => true,'message' => 'Today\'s payout limit exceeded.'],429);
         }
 
-        // Calculate Charge
         $chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payout($data->amount, $this->user['package'], $this->user['payout_provider']);
         if (!$charge) {
@@ -1806,19 +1717,14 @@ class Api extends Controller
         $ifsc = strtoupper(trim($ifsc));
         $url = "https://ifsc.razorpay.com/" . urlencode($ifsc);
         
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-        $resp = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $response = Http::withoutVerifying()
+            ->timeout(5)
+            ->connectTimeout(3)
+            ->withUserAgent('Mozilla/5.0')
+            ->get($url);
 
-        if ($resp && $httpCode == 200) {
-            $data = json_decode($resp, true);
+        if ($response->successful()) {
+            $data = $response->json();
             if (is_array($data) && !empty($data['BANK'])) {
                 return $data;
             }
@@ -1852,8 +1758,7 @@ class Api extends Controller
         ];
     }
 
-
-    private function encrypt($data, $key, $iv)
+private function encrypt($data, $key, $iv)
     {
         return base64_encode(openssl_encrypt($data, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv));
     }
@@ -1882,7 +1787,6 @@ class Api extends Controller
             $udata['txnid'] = $response['data']['transaction']['txnid'];
         }
 
-        // Check before calling update
         if (isset($this->apiRequestModel) && isset($this->apiRequestId)) {
             $this->apiRequestModel->update($this->apiRequestId, $udata);
         }

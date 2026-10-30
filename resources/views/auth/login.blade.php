@@ -17,7 +17,6 @@
 
 </head>
 
-
 <body class="bg-white">
 
  <div id="loader" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 999999;" class="bg-primary d-flex justify-content-center align-items-center flex-column gap-3">
@@ -62,8 +61,7 @@
                         <div class="card col-xxl-9 col-lg-9 col-md-9 col-sm-12 ">
                             <div class="card-body p-5">
 
-
-                                <div class="d-flex  justify-content-between align-items-center mb-4">
+<div class="d-flex  justify-content-between align-items-center mb-4">
                                     <img src="{!! e(env('logo')) !!}" alt="logo"
                                         style="width: auto; height: 70px;" class="desktop-logo">
                                     <div class="d-flex flex-column">
@@ -71,12 +69,8 @@
                                        <p class="text-muted mb-0 fs-10">login to your account.</p>
                                     </div>
                                 </div>
-                                
-                               
 
-                                
-                                
-                                <form class="no-ajax">
+<form class="no-ajax">
                                     <div class="row gy-3">
                                         
                                         <div class="col-xl-12">
@@ -88,7 +82,7 @@
                                         <div class="col-xl-12 mb-2">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                               <label for="password" class="form-label text-default d-block mb-0">Password</label>
-                                                <a onclick="navigate('/user/forgot-password',true)" class="text-primary cursor-pointer">Forgot Password?</a>
+                                                <a onclick="navigate('{{ route('forgot-password') }}',true)" class="text-primary cursor-pointer">Forgot Password?</a>
                                             </div>
                                           
                                             <div class="input-group">
@@ -111,21 +105,15 @@
                                             </div>
                                         </div>
 
-
-
-                                          
-
-                                        <div class="col-xl-12 d-grid mt-2">
+<div class="col-xl-12 d-grid mt-2">
                                             <button type="button" id="loginBtn" class="btn btn-lg btn-danger rounded-pill">Login</button>
                                         </div>
                                         
                                          <div class="col-xl-12 d-grid mt-3">
-                                            <p class="text-center">Don't have account ? <a class="text-primary cursor-pointer" onclick="navigate('/user/register',true)">Register</a></p>
+                                            <p class="text-center">Don't have account ? <a class="text-primary cursor-pointer" onclick="navigate('{{ route('register') }}',true)">Register</a></p>
                                         </div>
-                                        
-                                      
-                                        
-                                    </div>
+
+</div>
                                 </form>
                             </div>
                         </div>
@@ -145,7 +133,6 @@
 
 <script>
 
-
 function createpassword (type, ele)  {
     document.getElementById(type).type = document.getElementById(type).type == "password" ? "text" : "password"
     let icon = ele.childNodes[0].classList
@@ -159,8 +146,6 @@ function createpassword (type, ele)  {
         ele.childNodes[0].classList.remove("ri-eye-off-line")
     }
 }
-
-
 
 document.querySelector("#loginBtn").onclick = async () => {
     const email = document.querySelector("#email").value.trim();
@@ -262,7 +247,7 @@ document.querySelector("#loginBtn").onclick = async () => {
             captcha: captchaToken
         };
 
-        const response = await fetch('/api/user/login', {
+        const response = await fetch(@json(route('api.user.login')), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -277,12 +262,12 @@ document.querySelector("#loginBtn").onclick = async () => {
         }
 
         if (result.status == "success" && result.otpRequired) {
-            navigate('/user/login-verification', true, () => {
+            navigate(@json(route('verify-login')), true, () => {
                 notify("success", "OTP Sent to your registered email & phone");
             });
         } else if (result.status == "success" && !result.otpRequired) {
             notify("success", result.message, () => {
-                location.href = "/user/dashboard";
+                location.href = @json(route('dashboard'));
             });
         }
 
@@ -295,11 +280,9 @@ document.querySelector("#loginBtn").onclick = async () => {
 };
 </script>
 
+<style>
 
-    <style>
-    
-
-        .card.custom-card {
+.card.custom-card {
             width: auto;
         }
 
@@ -349,9 +332,7 @@ document.querySelector("#loginBtn").onclick = async () => {
         }
     </style>
 
-
-    <?php echo view('includes/js', get_defined_vars()); ?>
-
+@include('includes.js')
 
 </body>
 

@@ -1,4 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "webhook"; echo view("header", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'webhook'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -19,7 +21,7 @@
                 <h6 class="card-title"><i class="ti ti-arrow-down-left"></i> Payin Webhook URL</h6>
             </div>
             <div class="card-body">
-                <form action="/api/update-webhook/payin" method="POST" novalidate>
+                <form action="{{ route('api.update-webhook.payin') }}" method="POST" novalidate>
                     <label class="mb-1">Webhook URL <span class="text-primary">*</span></label>
                     <input type="text" name="url" value="{!! $user['payin_webhook'] !!}" validation="url" class="form-control" placeholder="Enter URL" required>
                     <div class="invalid-feedback"></div>
@@ -35,7 +37,7 @@
                 <h6 class="card-title"><i class="ti ti-arrow-up-right"></i> Payout Webhook URL</h6>
             </div>
             <div class="card-body">
-                <form action="/api/update-webhook/payout" method="POST" novalidate>
+                <form action="{{ route('api.update-webhook.payout') }}" method="POST" novalidate>
                     <label class="mb-1">Webhook URL <span class="text-primary">*</span></label>
                     <input type="text" name="url" value="{!! $user['payout_webhook'] !!}" validation="url" class="form-control" placeholder="Enter URL" required>
                     <div class="invalid-feedback"></div>
@@ -46,7 +48,6 @@
         </div>
     </div>
 </div>
-
 
 <script>
 
@@ -75,10 +76,10 @@
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/update-webhook-verify",{ otp : otp },(data) => {
+                        $.post(@json(route('api.update-webhook.verify')),{ otp : otp },(data) => {
                           
                                 notify("success",data.message,() => {
-                                    //navigate('/settings/api-keys');
+                                    
                                 });
                             
                         }).fail((xhr) => {
@@ -92,9 +93,8 @@
         let error = xhr.responseJSON.message;
         notify("error",error);
     }
-    
-    
-         function deleteIp(id){
+
+function deleteIp(id){
           Swal.fire({
   title: 'Are you sure?',
   text: "Do you want to delete this IP?",
@@ -106,15 +106,14 @@
   cancelButtonText: 'Cancel'
 }).then((result) => {
   if (result.isConfirmed) {
-    // Proceed with deletion logic here
+    
     confirmDelete(id);
   }
 });
        }
 
-
 function confirmDelete(id){
-     $.post('/api/delete/ip',{
+     $.post(@json(route('api.delete.ip')),{
          id : id
      },(data) => {
          
@@ -142,10 +141,10 @@ function confirmDelete(id){
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/delete-ip-verify",{ otp : otp },(data) => {
+                        $.post(@json(route('api.delete-ip-verify')),{ otp : otp },(data) => {
                           
                                 notify("success",data.message,() => {
-                                    navigate('/settings/whitelisted-ip');
+                                    navigate(@json(route('settings.whitelisted-ip')));
                                 });
                             
                         }).fail((xhr) => {
@@ -161,4 +160,6 @@ function confirmDelete(id){
 
 </script>
 
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

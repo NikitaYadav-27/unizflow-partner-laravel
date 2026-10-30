@@ -1,4 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "topup"; echo view("header", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'topup'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -11,13 +13,12 @@
     </ol>
 </nav>
 
-
 <div class="card custom-card">
     <div class="card-header">
         <h6 class="card-title">Request Fund</h6>
     </div>
     <div class="card-body">
-         <form action="/api/wallet/add-topup-request"  method="POST" novalidate>
+         <form action="{{ route('api.wallet.add-topup-request') }}"  method="POST" novalidate>
           <div class="row">
            
            <div class="col-lg-4">
@@ -25,9 +26,9 @@
               <label>Bank Account * </label>
               <select class="form-control noselect2" name="bank"  required>
                  <option value="">Select Account</option>
-                 <?php foreach($banks as $bank) : ?>
-                  <option value="<?php echo $bank->id;  ?>"><?php echo $bank->name; ?></option>
-                 <?php endforeach; ?>
+                 @foreach($banks as $bank)
+                  <option value="{{ $bank->id }}">{{ $bank->name }}</option>
+                 @endforeach
               </select>
               <div class="invalid-feedback"></div>
           </div>
@@ -85,45 +86,37 @@
             
             <input type="hidden" required name="receipt" id="file">
 
-                       
-          </div>
-          
-        
-          <button class="btn btn-primary float-end mt-2" type="submit" disabled id="ctbtn">Continue</button>
+</div>
+
+<button class="btn btn-primary float-end mt-2" type="submit" disabled id="ctbtn">Continue</button>
         </form>
     </div>
 </div>
 
 <script>
 
-
-      function onRequestResponse(response)
+function onRequestResponse(response)
       {
          notify("success",response.message,() => {
-             navigate('/wallet/topup');
+             navigate(@json(route('wallet.topup')));
          });
       }
-      
-      
-       function onRequestError(error) {
+
+function onRequestError(error) {
           notify("error",error.responseJSON.message);
        }
-      
-      
-      
-      
-  function fileUploaded(input) {
+
+function fileUploaded(input) {
     document.querySelector("#ctbtn").disabled = true;
     const file = input.files[0];
     if (!file) return;
 
-    // Allowed extensions
-    const allowedExtensions = ['png', 'jpg', 'jpeg', 'pdf'];
+const allowedExtensions = ['png', 'jpg', 'jpeg', 'pdf'];
     const fileExtension = file.name.split('.').pop().toLowerCase();
 
     if (!allowedExtensions.includes(fileExtension)) {
         alertt("error", "Invalid file type. Please upload PNG, JPG, JPEG, or PDF files only.");
-        input.value = ""; // Clear the input
+        input.value = ""; 
         return;
     }
 
@@ -131,15 +124,15 @@
 
     reader.onload = function(e) {
         document.querySelector("#ctbtn").disabled = false;
-        const base64String = e.target.result; // Already includes data:<mime>;base64,
+        const base64String = e.target.result; 
         $("#file").val(base64String);
     };
 
-    // Read the file as data URL (includes mime type)
-    reader.readAsDataURL(file);
+reader.readAsDataURL(file);
 }
-
 
 </script>
 
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

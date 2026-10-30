@@ -5,8 +5,7 @@
 
 <head>
 
-    <!-- Meta Data -->
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Register - {!! env('app.title') !!}</title>
@@ -17,7 +16,6 @@
     {!! view("includes/css"); !!}
 
 </head>
-
 
 <body class="bg-white">
 
@@ -69,12 +67,8 @@
                                        <p class="text-muted mb-0 fs-10">Register your account.</p>
                                     </div>
                                 </div>
-                                
-                               
 
-                                
-                                
-                                <form action="/api/user/register" method="POST" autocomplete="off" captcha="true">
+<form action="{{ route('api.user.register') }}" method="POST" autocomplete="off" captcha="true">
                                     <div class="row">
                                         
                                         <div class="col-xl-12 mb-2">
@@ -92,18 +86,16 @@
                                                   placeholder="Enter your Phone" required>
                                             <div class="invalid-feedback"></div>
                                         </div>
-                                        
-                                        
-                                        <div class="col-xl-12 mb-2">
+
+<div class="col-xl-12 mb-2">
                                             <label for="signin-username" class="form-label text-default">Email</label>
                                             <input validation="email" autocomplete="new-email" type="email" name="email"
                                                 class="form-control form-control-lg" id="signin-email"
                                                 placeholder="Enter you email" required>
                                             <div class="invalid-feedback"></div>
                                         </div>
-                                        
-                                        
-                                        <div class="col-xl-12 mb-2">
+
+<div class="col-xl-12 mb-2">
                                             <label for="signin-password"
                                                 class="form-label text-default d-block">Password</label>
                                             
@@ -124,28 +116,15 @@
                                             </div>
                                         </div>
 
-
-
-                                          
-
-                                        <div class="col-xl-12 d-grid mt-2">
+<div class="col-xl-12 d-grid mt-2">
                                             <button type="submit" id="submitBtn" class="btn btn-lg btn-danger rounded-pill">Create new Account</button>
                                         </div>
                                         
                                          <div class="col-xl-12 d-grid mt-3">
-                                            <p class="text-center">Already have account ? <a class="text-primary cursor-pointer" onclick="navigate('/user/login',true)">Login</a></p>
+                                            <p class="text-center">Already have account ? <a class="text-primary cursor-pointer" onclick="navigate('{{ route('login') }}',true)">Login</a></p>
                                         </div>
-                                        
-                                        <!--<div class="d-flex justify-content-around align-items-center">-->
-                                        <!--    <div class="col-6 d-flex justify-content-center align-items-center">-->
-                                        <!--        <img src="/assets/pci-dss.png" class="w-75">-->
-                                        <!--    </div>-->
-                                        <!--    <div class="col-6 d-flex justify-content-center align-items-center">-->
-                                        <!--        <img src="/assets/norton.png" class="w-75">-->
-                                        <!--    </div>-->
-                                        <!--</div>-->
-                                        
-                                    </div>
+
+</div>
                                 </form>
                             </div>
                         </div>
@@ -154,13 +133,8 @@
             </div>
         </div>
     </div>
-    
-    
-    
-    
 
-    
-    <style>
+<style>
         .authentication .authentication-cover:before {
             background-color: transparent;
         }
@@ -171,7 +145,7 @@
         var recaptchaWidget;
 
         function onRequestResponse(response) {
-           navigate("/user/verify-registration",true,() => {
+           navigate('{{ route('verify-registration') }}',true,() => {
                notify("success","Please Verify your Email to continue");
            });
         }
@@ -182,8 +156,7 @@
            if (btn) { btn.disabled = false; btn.innerHTML = 'Create new Account'; }
         }
 
-       
-        function onCaptchaSuccess(token) {
+function onCaptchaSuccess(token) {
         
             $("#submitBtn").removeAttr("disabled");
         }
@@ -192,24 +165,19 @@
             $("#submitBtn").attr("disabled", "true");
         }
 
-
-
-    </script>
+</script>
 
     <style>
-    
 
-        .card.custom-card {
+.card.custom-card {
             width: auto;
         }
         
         input:-webkit-autofill {
     background-clip: padding-box;
 }
-        
 
-        /* css for devices width less than 768px */
-        @media screen and (max-width: 768px) {
+@media screen and (max-width: 768px) {
             .col-sm-0 {
                 display: none !important;
             }
@@ -221,7 +189,7 @@
         }
         
         .form-control{
-            /*padding: 12px 20px;*/
+            
             border-radius: 13px;
             font-size: 15px;
         }
@@ -256,9 +224,7 @@
         }
     </style>
 
-
-    <?php echo view('includes/js', get_defined_vars()); ?>
-
+@include('includes.js')
 
 </body>
 

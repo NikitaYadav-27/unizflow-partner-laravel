@@ -21,8 +21,7 @@ $errorId = uniqid('error', true);
 </head>
 <body onload="init()">
 
-    <!-- Header -->
-    <div class="header">
+<div class="header">
         <div class="environment">
             Displayed at {!! e(date('H:i:sa')) !!} &mdash;
             PHP: {!! e(PHP_VERSION) !!}  &mdash;
@@ -39,8 +38,7 @@ $errorId = uniqid('error', true);
         </div>
     </div>
 
-    <!-- Source -->
-    <div class="container">
+<div class="container">
         <p><b>{!! e(clean_path($file)) !!}</b> at line <b>{!! e($line) !!}</b></p>
 
         <?php if (is_file($file)) : ?>
@@ -87,15 +85,14 @@ $errorId = uniqid('error', true);
 
         <div class="tab-content">
 
-            <!-- Backtrace -->
-            <div class="content" id="backtrace">
+<div class="content" id="backtrace">
 
                 <ol class="trace">
                 <?php foreach ($trace as $index => $row) : ?>
 
                     <li>
                         <p>
-                            <!-- Trace info -->
+                            
                             <?php if (isset($row['file']) && is_file($row['file'])) : ?>
                                 <?php
                                 if (isset($row['function']) && in_array($row['function'], ['include', 'include_once', 'require', 'require_once'], true)) {
@@ -108,8 +105,7 @@ $errorId = uniqid('error', true);
                                 {PHP internal code}
                             <?php endif; ?>
 
-                            <!-- Class/Method -->
-                            <?php if (isset($row['class'])) : ?>
+<?php if (isset($row['class'])) : ?>
                                 &nbsp;&nbsp;&mdash;&nbsp;&nbsp;{!! e($row['class'] . $row['type'] . $row['function']) !!}
                                 <?php if (! empty($row['args'])) : ?>
                                     <?php $argsId = $errorId . 'args' . $index ?>
@@ -144,8 +140,7 @@ $errorId = uniqid('error', true);
                             <?php endif; ?>
                         </p>
 
-                        <!-- Source? -->
-                        <?php if (isset($row['file']) && is_file($row['file']) && isset($row['class'])) : ?>
+<?php if (isset($row['file']) && is_file($row['file']) && isset($row['class'])) : ?>
                             <div class="source">
                                 {!! static::highlightFile($row['file'], $row['line']) !!}
                             </div>
@@ -157,8 +152,7 @@ $errorId = uniqid('error', true);
 
             </div>
 
-            <!-- Server -->
-            <div class="content" id="server">
+<div class="content" id="server">
                 <?php foreach (['_SERVER', '_SESSION'] as $var) : ?>
                     <?php
                     if (empty($GLOBALS[$var]) || ! is_array($GLOBALS[$var])) {
@@ -192,8 +186,7 @@ $errorId = uniqid('error', true);
 
                 <?php endforeach ?>
 
-                <!-- Constants -->
-                <?php $constants = get_defined_constants(true); ?>
+<?php $constants = get_defined_constants(true); ?>
                 <?php if (! empty($constants['user'])) : ?>
                     <h3>Constants</h3>
 
@@ -222,8 +215,7 @@ $errorId = uniqid('error', true);
                 <?php endif; ?>
             </div>
 
-            <!-- Request -->
-            <div class="content" id="request">
+<div class="content" id="request">
                 <?php $request = service('request'); ?>
 
                 <table>
@@ -260,8 +252,7 @@ $errorId = uniqid('error', true);
                     </tbody>
                 </table>
 
-
-                <?php $empty = true; ?>
+<?php $empty = true; ?>
                 <?php foreach (['_GET', '_POST', '_COOKIE'] as $var) : ?>
                     <?php
                     if (empty($GLOBALS[$var]) || ! is_array($GLOBALS[$var])) {
@@ -340,8 +331,7 @@ $errorId = uniqid('error', true);
                 <?php endif; ?>
             </div>
 
-            <!-- Response -->
-            <?php
+<?php
                 $response = service('response');
                 $response->setStatusCode(http_response_code());
             ?>
@@ -387,8 +377,7 @@ $errorId = uniqid('error', true);
                 <?php endif; ?>
             </div>
 
-            <!-- Files -->
-            <div class="content" id="files">
+<div class="content" id="files">
                 <?php $files = get_included_files(); ?>
 
                 <ol>
@@ -398,8 +387,7 @@ $errorId = uniqid('error', true);
                 </ol>
             </div>
 
-            <!-- Memory -->
-            <div class="content" id="memory">
+<div class="content" id="memory">
 
                 <table>
                     <tbody>
@@ -420,9 +408,9 @@ $errorId = uniqid('error', true);
 
             </div>
 
-        </div>  <!-- /tab-content -->
+        </div>  
 
-    </div> <!-- /container -->
+    </div> 
     <?php endif; ?>
 
 </body>

@@ -6,7 +6,6 @@ use Exception;
 class Payment extends Controller {
     
     public function link($txnid) {
-        // Decrypt transaction ID
         $encTxnId = $txnid;
         try {
             $decryptedTxnid = openssl_decrypt(
@@ -17,12 +16,10 @@ class Payment extends Controller {
                 substr(hash('sha256', env("encryption.key")), 0, 16)
             );
             
-            // Check if decryption was successful
             if ($decryptedTxnid === false) {
                 throw new Exception("Decryption failed");
             }
             
-            // Assign decrypted value to txnid
             $txnid = $decryptedTxnid;
             
         } catch (Exception $e) {
@@ -32,7 +29,6 @@ class Payment extends Controller {
             ], 401);
         }
         
-        // Load transaction from database
         $transactionModel = new \App\Models\Transaction();
         $transaction = $transactionModel->findTxnByTxnid($txnid);
         
@@ -44,9 +40,8 @@ class Payment extends Controller {
         }
         
         return view('payment',["txn" => $transaction, 'encTxnId' => $encTxnId]);
-        
-        
-    }
+
+}
     
     public function status() {
         $txnid = request()->post("txnid");
@@ -59,12 +54,10 @@ class Payment extends Controller {
                 substr(hash('sha256', env("encryption.key")), 0, 16)
             );
             
-            // Check if decryption was successful
             if ($decryptedTxnid === false) {
                 throw new Exception("Decryption failed");
             }
             
-            // Assign decrypted value to txnid
             $txnid = $decryptedTxnid;
             
         } catch (Exception $e) {
@@ -74,7 +67,6 @@ class Payment extends Controller {
             ], 401);
         }
         
-        // Load transaction from database
         $transactionModel = new \App\Models\Transaction();
         $transaction = $transactionModel->findTxnByTxnid($txnid);
         
@@ -88,7 +80,6 @@ class Payment extends Controller {
             return response()->json([
                 'status' => $transaction['status']
             ], 200);
-        
-        
-    }
+
+}
 }

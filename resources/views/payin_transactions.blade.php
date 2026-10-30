@@ -1,7 +1,6 @@
-<?php if (!isset($_GET['turbo'])) {
-    $page = "payin-transactions";
-    echo view("header", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'payin-transactions'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -11,8 +10,6 @@
         <li class="breadcrumb-item active" aria-current="page"><i class="ti ti-arrows-left-right me-1 fs-15"></i>Transactions</li>
     </ol>
 </nav>
-
-
 
 <div class="card">
     <div class="card-body">
@@ -47,8 +44,7 @@
                         placeholder="Search">
                 </div>
 
-
-            </div>
+</div>
         </div>
 
         <div class="table-responsive">
@@ -58,7 +54,7 @@
                         <th scope="col">ID</th>
                         <th scope="col">Name</th>
                         <th scope="col">Phone</th>
-                        <!--<th scope="col">Email</th>-->
+                        
                         <th scope="col">Txnid</th>
                         <th scope="col">Merchant TxnId</th>
                         <th scope="col">RRN</th>
@@ -72,7 +68,7 @@
                         <th scope="col">Date Time</th>
                         <th scope="col">Txn Complete Time</th>
                         <th scope="col">Remarks</th>
-                        <!--<th scope="col">Actions</th>-->
+                        
                     </tr>
                 </thead>
                 <tbody>
@@ -81,12 +77,8 @@
             </table>
         </div>
 
-
-    </div>
 </div>
-
-
-
+</div>
 
 <script>
 
@@ -94,8 +86,7 @@
     window.searchBy = "";
     window.searchValue = "";
 
-
-    function getTransactions() {
+function getTransactions() {
         window.dataTable = $("#dataTable").dataTable(
             {
                 "bFilter": false,
@@ -105,7 +96,7 @@
                 "paging": true,
                 "ordering" : false,
                 "ajax": {
-                    "url": "/api/tables/payin_transactions",
+                    "url": @json(route('api.tables.payin-transactions')),
                     "type": "GET",
                     "data": function (d) {
                         d.searchBy = window.searchBy;
@@ -124,7 +115,7 @@
 
     function changeSearchBy(value) {
         window.searchBy = value;
-        //refresh data
+        
         if (window.searchValue != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -133,7 +124,7 @@
 
     function changeSearchValue(value) {
         window.searchValue = value;
-        //refresh data
+        
         if (window.searchBy != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -162,7 +153,6 @@
     }
 </style>
 
-
-<?php if (!isset($_GET['turbo'])) {
-    echo view("footer", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

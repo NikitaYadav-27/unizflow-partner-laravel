@@ -1,9 +1,10 @@
-<?php if (!isset($_GET['turbo'])) { $page = "profile"; echo view("header", get_defined_vars()); } 
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'profile'])
+@endif
 
-$db = \Illuminate\Support\Facades\DB::connection();
-
-
-?>
+@php
+    $db = \Illuminate\Support\Facades\DB::connection();
+@endphp
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -15,8 +16,6 @@ $db = \Illuminate\Support\Facades\DB::connection();
     </ol>
 </nav>
 
-<!-- Profile Header -->
-
 <div class="row">
     <div class="col-lg-4">
         <div class="card custom-card overflow-hidden">
@@ -24,16 +23,7 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                 <div class="d-sm-flex align-items-top p-4 border-bottom-0 main-profile-cover">
                                     <div>
                                         <span class="avatar avatar-xxl avatar-rounded online me-3 bg-white text-primary fw-bold">
-                                            <?php 
-                                  //initials of name
-                                    $name = $user['name'];
-                                    $name = explode(" ", $name);
-                                    $initials = "";
-                                    foreach ($name as $n) {
-                                        $initials .= strtoupper($n[0]);
-                                    }
-                                    echo $initials;
-                                ?>
+                                            {{ collect(explode(' ', $user['name'] ?? ''))->filter()->map(fn($n) => strtoupper($n[0] ?? ''))->implode('') }}
                                         </span>
                                     </div>
                                     <div class="flex-fill main-profile-info">
@@ -82,14 +72,8 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                         
                                     </div>
                                 </div>
-                                
-                                
-                                
-                              
-                                
-                                
-                               
-                            </div>
+
+</div>
                         </div>
     </div>
     <div class="col-lg-8">
@@ -144,18 +128,14 @@ $db = \Illuminate\Support\Facades\DB::connection();
           <div class="fs-14">{!! $user['phone'] !!}</div>
         </div>
       </div>
-      
-      <!--<h6 class="my-3 ">Settlement Bank Account</h6>-->
-      
-      <?php 
-      
-      $bankAccount = (array) \Illuminate\Support\Facades\DB::connection()
-            ->table('users_bank')
-            ->where('user_id', $user['id'])
-            ->orderBy('id', 'DESC')
-            ->first();
-      
-      ?>
+
+@php
+          $bankAccount = (array) \Illuminate\Support\Facades\DB::connection()
+                ->table('users_bank')
+                ->where('user_id', $user['id'])
+                ->orderBy('id', 'DESC')
+                ->first();
+      @endphp
       <hr>
       <div class="row g-3">
         <div class="col-md-6">
@@ -185,16 +165,18 @@ $db = \Illuminate\Support\Facades\DB::connection();
         </div> 
         <div class="col-md-6">
           <div class="fw-semibold text-muted account-status-title">Account Status</div>
-          <div class="fs-14 account-detail"><?php 
-             $status = $bankAccount['status'] ?? "NA";
-             if($status  == "Pending"){
-                echo '<badge class="badge bg-warning-transparent">Waiting for Approval</badge>';  
-             }elseif($status  == "Approved"){
-                echo '<badge class="badge bg-success-transparent">Approved</badge>';    
-             }else{
-                 echo "NA";
-             }
-          ?></div>
+          <div class="fs-14 account-detail">
+              @php
+                 $status = $bankAccount['status'] ?? "NA";
+              @endphp
+              @if($status == "Pending")
+                 <badge class="badge bg-warning-transparent">Waiting for Approval</badge>
+              @elseif($status == "Approved")
+                 <badge class="badge bg-success-transparent">Approved</badge>
+              @else
+                 NA
+              @endif
+          </div>
         </div>
         
         <div class="col-md-12 text-end">
@@ -218,19 +200,19 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                                        </tr>
                                                    </thead>
                                                    <tbody>
-                                                       <?php foreach($db->table("package_slabs")->where("package_id",$user['package'])->where('service','payin')->get() as $slab) :  ?>
+                                                       @foreach($db->table("package_slabs")->where("package_id",$user['package'])->where('service','payin')->get() as $slab)
                                                          <tr>
-                                                             <td>₹ {!! $slab->min_amount; !!}</td>
-                                                             <td>₹ {!! $slab->max_amount; !!}</td>
+                                                             <td>₹ {!! $slab->min_amount !!}</td>
+                                                             <td>₹ {!! $slab->max_amount !!}</td>
                                                              <td>
-                                                                 <?php if($slab->percent == 1) : ?>
-                                                                 {!! $slab->amount; !!} %  <?php $slab->gst == 1?"+ GST":""?>
-                                                                 <?php else : ?>
-                                                                  ₹ {!! $slab->amount; !!}  <?php $slab->gst == 1?"+ GST":""?>
-                                                                 <?php endif; ?>
+                                                                 @if($slab->percent == 1)
+                                                                 {!! $slab->amount !!} %  {{ $slab->gst == 1 ? "+ GST" : "" }}
+                                                                 @else
+                                                                  ₹ {!! $slab->amount !!}  {{ $slab->gst == 1 ? "+ GST" : "" }}
+                                                                 @endif
                                                              </td>
                                                          </tr>
-                                                       <?php endforeach; ?>
+                                                       @endforeach
                                                    </tbody>
                                                </table>
                                            </div>
@@ -250,19 +232,19 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                                        </tr>
                                                    </thead>
                                                    <tbody>
-                                                       <?php foreach($db->table("package_slabs")->where("package_id",$user['package'])->where('service','payout')->get() as $slab) :  ?>
+                                                       @foreach($db->table("package_slabs")->where("package_id",$user['package'])->where('service','payout')->get() as $slab)
                                                          <tr>
-                                                             <td>₹ {!! $slab->min_amount; !!}</td>
-                                                             <td>₹ {!! $slab->max_amount; !!}</td>
+                                                             <td>₹ {!! $slab->min_amount !!}</td>
+                                                             <td>₹ {!! $slab->max_amount !!}</td>
                                                              <td>
-                                                                 <?php if($slab->percent == 1) : ?>
-                                                                 {!! $slab->amount; !!} %  <?php $slab->gst == 1?"+ GST":""?>
-                                                                 <?php else : ?>
-                                                                  ₹ {!! $slab->amount; !!}  <?php $slab->gst == 1?"+ GST":""?>
-                                                                 <?php endif; ?>
+                                                                 @if($slab->percent == 1)
+                                                                 {!! $slab->amount !!} %  {{ $slab->gst == 1 ? "+ GST" : "" }}
+                                                                 @else
+                                                                  ₹ {!! $slab->amount !!}  {{ $slab->gst == 1 ? "+ GST" : "" }}
+                                                                 @endif
                                                              </td>
                                                          </tr>
-                                                       <?php endforeach; ?>
+                                                       @endforeach
                                                    </tbody>
                                                </table>
                                            </div>
@@ -286,15 +268,13 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                                        </tr>
                                                    </thead>
                                                    <tbody id="recentLogins">
-                                                      
-                                                      
-                                                   </tbody>
+
+</tbody>
                                                </table>
                                            </div>
                                        </div>
-                                       
-                                       
-                                    </div>
+
+</div>
                                     <div class="tab-pane text-muted p-0 border-0" id="apiKeys" role="tabpanel">
                                        <div class="card custom-card shadow-0 border mb-3">
             <div class="card-header">
@@ -309,18 +289,16 @@ $db = \Illuminate\Support\Facades\DB::connection();
                     <button onclick="copyKey('{!! $user['merchant_id']; !!}',this);" class="btn text-primary border-primary" type="button"><i class="ti ti-copy"></i></button>
                 </div>
             </div>
-            
-                
-            <div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
+
+<div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
                 <label class="mb-1">Client Secret</label>
                 <div class="input-group">
                     <input type="text" class="form-control" readonly value="{!! $user['api_access_key']; !!}">
                     <button onclick="copyKey('{!! $user['api_access_key']; !!}',this);" class="btn text-primary border-primary" type="button"><i class="ti ti-copy"></i></button>
                 </div>
             </div>
-            
-            
-             <div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
+
+<div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
                 <label class="mb-1">Encryption Key</label>
                 <div class="input-group">
                     <input type="text" class="form-control" readonly value="{!! $key['aes_key']; !!}">
@@ -348,7 +326,7 @@ $db = \Illuminate\Support\Facades\DB::connection();
                                      <div class="card custom-card border shadow-0">
             <div class="card-header d-flex justify-content-between">
                 <h6 class="card-title"><i class="ti ti-server"></i> Whitelisted IP's</h6>
-                <button class="btn btn-sm btn-primary" onclick="navigate('/settings/whitelisted-ip');"><i class="ti ti-circle-plus"></i>&nbsp;Whitelist IP</button>
+                <button class="btn btn-sm btn-primary" onclick="navigate('{{ route('settings.whitelisted-ip') }}');"><i class="ti ti-circle-plus"></i>&nbsp;Whitelist IP</button>
             </div>
             <div class="card-body px-0 py-1">
                 <div class="table-responsive">
@@ -362,16 +340,16 @@ $db = \Illuminate\Support\Facades\DB::connection();
                             </tr>
                         </thead>
                         <tbody>
-                            <?php $index=1; foreach((new \App\Models\IP())->where("user_id",$user['id'])->where("deleted",0)->get() as $ip) :  ?>
+                            @foreach(\App\Models\IP::where("user_id",$user['id'])->where("deleted",0)->get() as $ip)
                               <tr>
-                                  <td>{!! $index !!}</td>
-                                  <td>{!! $ip['ip']; !!}</td>
-                                  <td>{!! $ip['created_at']; !!}</td>
+                                  <td>{{ $loop->iteration }}</td>
+                                  <td>{!! $ip['ip'] !!}</td>
+                                  <td>{!! $ip['created_at'] !!}</td>
                                   <td>
                                       <button onclick="deleteIp('{!! bin2hex(openssl_encrypt($ip['id'], 'AES-256-CBC', env("encryption.key"), OPENSSL_RAW_DATA, substr(hash('sha256', env("encryption.key")), 0, 16))) !!}');" class="btn btn-sm btn-danger-transparent"><i class="ti ti-trash"></i></button>
                                   </td>
                               </tr>
-                            <?php $index++; endforeach; ?>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -385,7 +363,7 @@ $db = \Illuminate\Support\Facades\DB::connection();
                 <h6 class="card-title"><i class="ti ti-arrow-down-left"></i> Payin Webhook URL</h6>
             </div>
             <div class="card-body">
-                <form action="/api/update-webhook/payin" method="POST" novalidate>
+                <form action="{{ route('api.update-webhook.payin') }}" method="POST" novalidate>
                     <label class="mb-1">Webhook URL <span class="text-primary">*</span></label>
                     <input type="text" name="url" value="{!! $user['payin_webhook'] !!}" validation="url" class="form-control" placeholder="Enter URL" required>
                     <div class="invalid-feedback"></div>
@@ -394,14 +372,13 @@ $db = \Illuminate\Support\Facades\DB::connection();
                 </form>
             </div>
         </div>
-        
-        
-        <div class="card custom-card border shadow-0">
+
+<div class="card custom-card border shadow-0">
             <div class="card-header">
                 <h6 class="card-title"><i class="ti ti-arrow-up-right"></i> Payout Webhook URL</h6>
             </div>
             <div class="card-body">
-                <form action="/api/update-webhook/payout" method="POST" novalidate>
+                <form action="{{ route('api.update-webhook.payout') }}" method="POST" novalidate>
                     <label class="mb-1">Webhook URL <span class="text-primary">*</span></label>
                     <input type="text" name="url" value="{!! $user['payout_webhook'] !!}" validation="url" class="form-control" placeholder="Enter URL" required>
                     <div class="invalid-feedback"></div>
@@ -417,13 +394,9 @@ $db = \Illuminate\Support\Facades\DB::connection();
     </div>
 </div>
 
-                    
-                    
-                    
 <script>
 
-
-    function editBank() {
+function editBank() {
        $(".account-detail").hide();
        $(".account-title").addClass("mb-1");
        $(".account-status-title").hide();
@@ -444,16 +417,14 @@ function updateBank(btn) {
         btn.disabled = false;
     };
 
-    // Validations
-    if (!name) return showError("Account holder name is required");
+if (!name) return showError("Account holder name is required");
     if (!accountNumber) return showError("Account number is required");
     if (!/^\d{9,18}$/.test(accountNumber)) return showError("Account number must be 9-18 digits");
     if (!ifsc) return showError("IFSC code is required");
     if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return showError("Invalid IFSC code format");
 
-    // Ajax request in JSON format
-    $.ajax({
-        url: "/api/admin/user/profile/update-bank",
+$.ajax({
+        url: @json(route('api.admin.user.profile.update-bank')),
         type: "POST",
         data: JSON.stringify({
             name: name,
@@ -473,9 +444,7 @@ function updateBank(btn) {
     });
 }
 
-
-    
-    function checkIFSC(value){
+function checkIFSC(value){
        if(value.length == 11) {
            $.get('https://ifsc.razorpay.com/'+value,{},(data) => {
                $("input[name=bank_name]").val(data.BANK);
@@ -509,10 +478,10 @@ function updateBank(btn) {
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/update-webhook-verify",{ otp : otp },(data) => {
+                        $.post(@json(route('api.update-webhook.verify')),{ otp : otp },(data) => {
                           
                                 notify("success",data.message,() => {
-                                    //navigate('/settings/api-keys');
+                                    
                                 });
                             
                         }).fail((xhr) => {
@@ -528,8 +497,6 @@ function updateBank(btn) {
     }
 </script>
 
-
-
 <script>
     function regenerateKey()
     {
@@ -544,7 +511,7 @@ function updateBank(btn) {
          cancelButtonText: 'Cancel'
        }).then((result) => {
          if (result.isConfirmed) {
-            $.get("/api/regenerate-api-key/send-otp",{},(data) => {
+            $.get(@json(route('api.regenerate-api-key.send-otp')),{},(data) => {
                 
                    Swal.fire({
                      title: 'Enter OTP',
@@ -570,10 +537,10 @@ function updateBank(btn) {
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/regenerate-api-key/verify-otp",{ otp : otp },(data) => {
+                        $.post(@json(route('api.regenerate-api-key.verify-otp')),{ otp : otp },(data) => {
                             
                                 notify("success",data.message,() => {
-                                    navigate('/settings/api-keys');
+                                    navigate(@json(route('settings.api-keys')));
                                 });
                           
                         }).fail((xhr) => {
@@ -603,9 +570,8 @@ function updateBank(btn) {
              btn.innerHTML = '<i class="ti ti-copy"></i>';
         },1000);
     }
-    
-    
-         function deleteIp(id){
+
+function deleteIp(id){
           Swal.fire({
   title: 'Are you sure?',
   text: "Do you want to delete this IP?",
@@ -617,15 +583,14 @@ function updateBank(btn) {
   cancelButtonText: 'Cancel'
 }).then((result) => {
   if (result.isConfirmed) {
-    // Proceed with deletion logic here
+    
     confirmDelete(id);
   }
 });
        }
 
-
 function confirmDelete(id){
-     $.post('/api/delete/ip',{
+     $.post(@json(route('api.delete.ip')),{ 
          id : id
      },(data) => {
          
@@ -653,10 +618,10 @@ function confirmDelete(id){
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/delete-ip-verify",{ otp : otp },(data) => {
+                        $.post(@json(route('api.delete-ip-verify')),{ otp : otp },(data) => {
                           
                                 notify("success",data.message,() => {
-                                    navigate('/settings/whitelisted-ip');
+                                    navigate(@json(route('settings.whitelisted-ip')));
                                 });
                             
                         }).fail((xhr) => {
@@ -671,7 +636,7 @@ function confirmDelete(id){
 }
 
 function load() {
-    $.get("/api/user/login/history",{},(data) => {
+    $.get(@json(route('api.user.login.history')),{},(data) => {
         data.data.loginHistory.forEach((login) => {
         $("#recentLogins").append(`
         
@@ -700,7 +665,6 @@ function load() {
     });
     });
 }
-
 
 function getBrowserIcon(browser)
           {
@@ -732,7 +696,6 @@ function getBrowserIcon(browser)
 <script class="afterLoadScript" type="plain/text">
 load();
 
-    
 </script>
 
 <style>
@@ -741,5 +704,6 @@ load();
     }
 </style>
 
-
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

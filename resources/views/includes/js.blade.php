@@ -1,59 +1,48 @@
-<?php if (!isset($_GET['turbo'])): ?>
+@if (!request()->query->has('turbo'))
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <!-- Bootstrap JS -->
+    
     <script src="/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
-<?php endif; ?>
+@endif
 
 <style>
     .daterangepicker .ranges li.active,
     .daterangepicker td.active,
     .daterangepicker td.active:hover {
-        background-color: rgb({!! env("colors.primary.rgb") !!}) !important;
+        background-color: rgb({{ env('colors.primary.rgb') }}) !important;
     }
 </style>
 
 <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 
-<!-- Show Password JS -->
-<!-- <script src="/assets/js/show-password.js?v=2"></script> -->
-
 <script src="/assets/libs/@popperjs/core/umd/popper.min.js"></script>
-
-
 
 <script src="/assets/js/sticky.js"></script>
 
 <script src="/assets/libs/apexcharts/apexcharts.min.js"></script>
 <script src="/assets/libs/chart.js/chart.min.js"></script>
 
-
 <script src="/assets/js/custom.js?v=1994"></script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<!-- Datatables Cdn -->
+
 <script src="https://cdn.datatables.net/2.2.0/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.2.0/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="//cdn.datatables.net/responsive/3.0.4/js/dataTables.responsive.js"></script>
 <link rel="stylesheet" href="//cdn.datatables.net/responsive/3.0.4/css/responsive.bootstrap.css" />
 
-<?php if(env("recaptcha.key")): ?>
-<script src="https://www.google.com/recaptcha/api.js?render={!! e(env('recaptcha.key')) !!}"></script>
-<?php endif; ?>
+@if (env('recaptcha.key'))
+<script src="https://www.google.com/recaptcha/api.js?render={{ env('recaptcha.key') }}"></script>
+@endif
 
 <script src="/assets/libs/sweetalert2/sweetalert2.min.js"></script>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
-
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
-
 <script src="/assets/libs/apexcharts/apexcharts.min.js"></script>
-
-
-
 
 <style>
     table.dataTable.dtr-inline.collapsed>tbody>tr>td.dtr-control:before,
@@ -77,16 +66,14 @@
         box-shadow: 0 0 0 1000px white inset !important;
         -webkit-box-shadow: 0 0 0 1000px white inset !important;
         -webkit-text-fill-color: #212529 !important;
-        /* default text color */
+        
     }
 
-    /* Firefox */
-    input[type="number"] {
+input[type="number"] {
         -moz-appearance: textfield;
     }
 
-
-    table.table th,table.table td{
+table.table th,table.table td{
         padding: 7px 20px !important;
     }
     
@@ -97,13 +84,10 @@
     }
     
  .g-recaptcha {
-    transform: scale(1); /* Adjust size if needed */
+    transform: scale(1); 
 }
 
-
 </style>
-
-
 
 <script>
 
@@ -175,9 +159,8 @@
                 } else {
                     return { status: false, message: "Invalid URL format." };
                 }
-    
 
-            case "amount":
+case "amount":
                 if (/^\d+(\.\d{1,2})?$/.test(data)) {
                     return { status: true };
                 } else {
@@ -204,13 +187,11 @@
         }
     }
 
-
-    function convertAllFormToAjax() {
+function convertAllFormToAjax() {
 
         document.querySelectorAll("form:not(.no-ajax)").forEach((form) => {
 
-            //validation part starts
-            form.querySelectorAll('input[validation], select[validation], textarea[validation]').forEach((input) => {
+form.querySelectorAll('input[validation], select[validation], textarea[validation]').forEach((input) => {
                 input.addEventListener('focus', () => {
                     input.dataset.touched = "true";
                 });
@@ -244,13 +225,11 @@
                     }
                 });
             });
-            //validation part ends
 
-            form.onsubmit = (e) => {
+form.onsubmit = (e) => {
                 e.preventDefault();
-                
-                //check for validation
-                let isValid = true;
+
+let isValid = true;
                 form.querySelectorAll('input[validation], select[validation], textarea[validation]').forEach((input) => {
                     if (input.dataset.touched === "true") {
                         let validation = input.getAttribute("validation");
@@ -269,10 +248,8 @@
                 if (!isValid) {
                     return false;
                 }
-                //check for validation ends
 
-                //check for empty fields
-                form.querySelectorAll('input[required], select[required], textarea[required]').forEach((input) => {
+form.querySelectorAll('input[required], select[required], textarea[required]').forEach((input) => {
                     if (input.value == "") {
                         isValid = false;
                         $(input).addClass("is-invalid");
@@ -282,19 +259,18 @@
                         $(input).siblings(".invalid-feedback").html("");
                     }
                 });
-                //check for empty fields ends
+                
                 if (!isValid) {
                     return false;
                 }
 
-
-                form.querySelector("button[type=submit]").disabled = true;
+form.querySelector("button[type=submit]").disabled = true;
                 let buttonText = form.querySelector("button[type=submit]").innerHTML;
                 form.querySelector("button[type=submit]").innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
-                if (form.getAttribute("captcha") && "{!! e(env('recaptcha.key')) !!}" !== "") {
+                if (form.getAttribute("captcha") && @json((string) env('recaptcha.key')) !== "") {
                     grecaptcha.ready(function () {
-                        grecaptcha.execute('{!! e(env('recaptcha.key')) !!}', { action: 'submit' }).then(function (token) {
+                        grecaptcha.execute(@json((string) env('recaptcha.key')), { action: 'submit' }).then(function (token) {
                             let input = document.createElement('input');
                             input.type = 'hidden';
                             input.name = 'captcha';
@@ -308,9 +284,7 @@
                     submitForm(form, buttonText);
                 }
 
-
-
-            }
+}
         });
 
     }
@@ -345,11 +319,9 @@
 
     }
 
+function notify(status, msg, callback = null) {
 
-    function notify(status, msg, callback = null) {
-
-
-        Swal.fire({
+Swal.fire({
             title: msg,
             icon: status
         }).then((result) => {
@@ -362,11 +334,7 @@
 
     }
 
-    window.first = <?php if (session()->get("user_id")) {
-        echo "false";
-    } else {
-        echo "true";
-    } ?>;
+    window.first = @json(!session()->get('user_id'));
 
     function navigate(path, complete = false, callback = null) {
         let postData = {
@@ -383,10 +351,7 @@
          });
         }catch(e){}
 
-
-
-
-        $.get(path, postData, (data) => {
+$.get(path, postData, (data) => {
             if (complete) {
                 document.documentElement.innerHTML = data;
 
@@ -410,13 +375,10 @@
 
                             }
 
-
-                        });
+});
                     } catch (e) { }
 
-
-
-                    try {
+try {
                         document.querySelectorAll("link").forEach((old_link) => {
                             let link = document.createElement("link");
                             link.href = old_link.href;
@@ -447,25 +409,20 @@
                         }
                     }, 500);
 
+}, 50);
 
-
-
-                }, 50);
-
-
-            } else {
+} else {
 
                 if(data.includes('login-page-identifier'))
                 {
-                    location.href='/';
+                    location.href = @json(route('home'));
                     return false;
                 }
 
                 window.navHistory.push(path);
                 document.querySelector("#innerBody").innerHTML = data;
 
-
-                document.querySelectorAll("#innerBody script").forEach((old_script) => {
+document.querySelectorAll("#innerBody script").forEach((old_script) => {
                     let script = document.createElement("script");
                     if (old_script.className != "afterLoadScript") {
                         script.innerHTML = old_script.innerHTML;
@@ -473,8 +430,7 @@
                         old_script.remove();
                     }
 
-
-                });
+});
 
                 executeComponentScript();
                 convertAllFormToAjax();
@@ -492,8 +448,7 @@
                     }
                 }, 50);
 
-
-            }
+}
 
             setTimeout(() => {
                 let loader = document.querySelector("#loader");
@@ -511,15 +466,14 @@
             });
 
         } catch (e) {
-            //console.log("Error",e);
+            
         }
 
         history.pushState({}, "", path);
 
     }
 
-
-    function closeDropdown(ele) {
+function closeDropdown(ele) {
         ele.parentElement.parentElement.className = ele.parentElement.parentElement.className.replace("show", "");
     }
 
@@ -527,16 +481,14 @@
         $(".side-menu__item").removeClass("active");
         ele.className = 'side-menu__item active';
         if (document.documentElement.clientWidth <= 992) {
-            //hide sidebar
+            
             document.querySelector("html").setAttribute("data-toggled", "close");
             document.querySelector("#responsive-overlay").className = '';
         }
 
+}
 
-    }
-
-
-    window.onload = function () {
+window.onload = function () {
         executeComponentScript();
         convertAllFormToAjax();
         setTimeout(() => {
@@ -549,11 +501,9 @@
             try { func(); } catch (e) { }
         });
 
+}
 
-    }
-
-
-    function executeComponentScript() {
+function executeComponentScript() {
         try { $('select:not(.no-select2)').select2(); } catch (e) { }
         let scriptComponent = document.querySelector('.afterLoadScript');
         if (scriptComponent) {

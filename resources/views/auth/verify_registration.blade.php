@@ -5,8 +5,7 @@
 
 <head>
 
-    <!-- Meta Data -->
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Register - {!! env('app.title') !!}</title>
@@ -17,7 +16,6 @@
     {!! view("includes/css"); !!}
 
 </head>
-
 
 <body class="bg-white">
 
@@ -65,24 +63,15 @@
                                        <p class="text-muted mb-0 fs-10">Verify Email.</p>
                                     </div>
                                 </div>
-                                
-                               
 
-                                
-                                
-                                <form action="/api/user/verify-registration" method="POST" autocomplete="off" captcha="true">
+<form action="{{ route('api.user.register.verify') }}" method="POST" autocomplete="off" captcha="true">
                                     <div class="row">
-                                        
-                                        
-                                        
-                                      
-                                        
-                                        <div class="col-xl-12 mt-2">
+
+<div class="col-xl-12 mt-2">
                                             <label for="signin-username" class="form-label text-default mb-1">Email</label>
                                             <div class="input-group email">
-                                                
 
-                                            <input disabled value="<?php echo session()->get("user-registration-data")['email']; ?>" autocomplete="new-email" type="email" name="email"
+<input disabled value="{{ session()->get('user-registration-data')['email'] ?? '' }}" autocomplete="new-email" type="email" name="email"
                                                 class="form-control form-control-lg" id="signin-email"
                                                 placeholder="Enter you email" required>
                                                 <div class="d-flex gap-2 align-items-center justify-content-center px-2" style="font-size: 15px;">
@@ -90,29 +79,19 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        
-                                         <div class="col-xl-12 mt-2">
+
+<div class="col-xl-12 mt-2">
                                             <label for="signin-username" class="form-label text-default mb-1">Email OTP</label>
                                             <input disabled oninput="checkOTP();" autocomplete="new-email" type="number" name="email_otp" class="form-control form-control-lg" 
                                                   placeholder="Enter otp received on your email" required>
                                               
                                         </div>
-                                        
-                                        
-                                        
 
-                                          
-
-                                        <div class="col-xl-12 d-grid mt-4">
+<div class="col-xl-12 d-grid mt-4">
                                             <button disabled type="submit" id="submitBtn" class="btn btn-lg btn-primary">Continue</button>
                                         </div>
-                                        
-                                        
-                                        
-                                        
-                                        
-                                    </div>
+
+</div>
                                 </form>
                             </div>
                         </div>
@@ -121,10 +100,8 @@
             </div>
         </div>
     </div>
-    
-    
 
-    <style>
+<style>
         .authentication .authentication-cover:before {
             background-color: transparent;
         }
@@ -134,14 +111,12 @@
      <script type="plain/text" class="afterLoadScript">
             sendOTP(document.querySelector("#emailOtpSendBtn"),'email',true);
     </script>
-    
-    
 
-    <script>
+<script>
         var recaptchaWidget;
 
         function onRequestResponse(response) {
-            navigate("/user/login",true,() => {
+            navigate('{{ route('login') }}',true,() => {
                 notify("success",response.message);
             });
         }
@@ -152,8 +127,7 @@
            if (btn) { btn.disabled = false; btn.innerHTML = 'Continue'; }
         }
 
-       
-       function checkOTP()
+function checkOTP()
         {
             let emailOTP = document.querySelector("input[name=email_otp]").value;
             if(emailOTP.length == 6)
@@ -169,7 +143,7 @@
             btn.disabled = true;
             btn.innerHTML = 'Sending..';
             let time = 100;
-            $.post("/api/user/register/send-otp",{ source : source },(data) => {
+            $.post(@json(route('api.user.register.send-otp')),{ source : source },(data) => {
 
                     document.querySelector("input[name="+source+"_otp]").disabled = false;
                     let i = setInterval(() => {
@@ -202,17 +176,12 @@
            const secs = String(seconds % 60).padStart(2, '0');
            return `${mins}:${secs}`;
         }
-        
-   
-        
 
-
-    </script>
+</script>
 
     <style>
-    
 
-          .input-group button{
+.input-group button{
 
         }
         
@@ -246,9 +215,8 @@
              background-color: rgb(var(--light-rgb));
              color: var(--default-text-color);
         }
-        
-        
-        .input-group:not(.email) input{
+
+.input-group:not(.email) input{
             border-left: 0px;
         }
         
@@ -271,14 +239,10 @@
                 border-top: 1px solid var(--input-border);
                 width: 100%;
         }
-        
-        
-        
-    </style>
 
+</style>
 
-    <?php echo view('includes/js', get_defined_vars()); ?>
-
+@include('includes.js')
 
 </body>
 

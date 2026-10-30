@@ -1,8 +1,6 @@
-<?php if (!isset($_GET['turbo'])) {
-    $page = "upi";
-    echo view("header", get_defined_vars());
-} ?>
-
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'upi'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -14,7 +12,6 @@
     </ol>
 </nav>
 
-
 <div class="row">
     <div class="col-lg-8 col-md-12 col-sm-12">
         <div class="card custom-card">
@@ -22,7 +19,7 @@
                 <h5 class="card-title"><i class="ti ti-qrcode me-1 fs-15"></i> Generate QR</h5>
             </div>
             <div class="card-body">
-                <form action="/api/upi/generate" method="POST" novalidate>
+                <form action="{{ route('api.upi.generate') }}" method="POST" novalidate>
                     <div class="row">
                         <div class="col-lg-4">
                             <div class="form-group mb-2">
@@ -56,20 +53,17 @@
 
                             </div>
                         </div>
-                        
 
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Expiry Time <span class="text-primary">*</span></label>
 
                                 <input type="text" disabled class="form-control" value="15 minutes" required>
-                             
 
-                            </div>
+</div>
                         </div>
 
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Amount <span class="text-primary">*</span></label>
 
@@ -79,8 +73,7 @@
                             </div>
                         </div>
 
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Remarks <span class="text-primary"></span></label>
 
@@ -128,13 +121,8 @@
             </div>
         </div>
     </div>
-    
-    
-    
-    
+
 </div>
-
-
 
 <script>
         window.paymentLink = "";
@@ -160,9 +148,8 @@
                      console.error('Failed to copy:', err);
                  });
              }
-             
-             
-             document.querySelector("#qrCode").src = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+encodeURIComponent(intent)+"&color=185765";
+
+document.querySelector("#qrCode").src = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data="+encodeURIComponent(intent)+"&color=185765";
              let remainingTime = 900;
              let interval = setInterval(() => {
                  remainingTime--;
@@ -180,7 +167,7 @@
              },1000);
              
              let interval2 = setInterval(() => {
-                 $.post("/api/transaction/status",{
+                 $.post(@json(route('api.transaction.status')),{
                      txnid : txnid
                  },(data) => {
                      if(data.status == "Success")
@@ -205,11 +192,8 @@
                      clearInterval(interval2);
                      clearInterval(interval); 
                      }
-                     
-                    
-                     
-                     
-                 });
+
+});
              },5000);
              
              window.intervals.push(interval);
@@ -232,9 +216,7 @@
                 .catch(console.error);
         }
 
-        
-        
-        function onRequestResponse(response) {
+function onRequestResponse(response) {
             notify("success",response.message);
             startMoniter(response.data.intent,response.data.txnid)
             window.paymentLink = response.data.payment_link;
@@ -246,6 +228,6 @@
            notify("error",error.responseJSON.message);
         }
 </script>
-<?php if (!isset($_GET['turbo'])) {
-    echo view("footer", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

@@ -1,7 +1,6 @@
-<?php if (!isset($_GET['turbo'])) {
-    $page = "dashboard";
-    echo view("header", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'dashboard'])
+@endif
 
 <div class="d-md-flex d-block align-items-center justify-content-between py-3 page-header-breadcrumb">
     <div>
@@ -12,7 +11,6 @@
 
     </div>
 </div>
-
 
 <div class="row">
     <div class="col-lg-8">
@@ -98,16 +96,14 @@
         </div>
             </div>
         </div>
-      
-        
+
 <div class="card custom-card">
             <div class="card-header">
                 <h6 class="card-title">Total History</h6>
             </div>
             <div class="card-body p-3 pb-0">
-      
-        
-        <div class="row">
+
+<div class="row">
             <div class="col-lg-4">
                 <div class="card custom-card bg-success-transparent border-success border">
                     <div class="card-body">
@@ -186,8 +182,7 @@
         </div>
         </div>
 
-
-        <div class="card custom-card">
+<div class="card custom-card">
             <div class="card-body">
                 <div class="content-wrapper">
                     <div id="crm-revenue-analytics"></div>
@@ -195,32 +190,17 @@
             </div>
         </div>
 
-
-      
-
-
-    </div>
+</div>
     <div class="col-lg-4">
-        
-        
-        
-         <div class="card custom-card overflow-hidden">
+
+<div class="card custom-card overflow-hidden">
                             <div class="card-body p-0">
                                 <div  class="bg-primary">
                                 <div class="d-sm-flex align-items-top p-4 border-bottom-0 " >
                                     
                                     <div>
                                         <span class="avatar avatar-xxl avatar-rounded online me-3 bg-white text-primary fw-bold">
-                                            <?php 
-                                  //initials of name
-                                    $name = $user['name'];
-                                    $name = explode(" ", $name);
-                                    $initials = "";
-                                    foreach ($name as $n) {
-                                        $initials .= strtoupper($n[0]);
-                                    }
-                                    echo $initials;
-                                ?>
+                                            {{ collect(explode(' ', $user['name'] ?? ''))->filter()->map(fn($n) => strtoupper($n[0] ?? ''))->implode('') }}
                                         </span>
                                     </div>
                                     <div class="flex-fill main-profile-info">
@@ -235,9 +215,8 @@
                                         </p>
                                         
                                     </div>
-                                    
-                                    
-                                </div>
+
+</div>
                                 
                                 <div class="px-4 pb-4">
                                     <h6 class="text-white">Wallet Balance</h6>
@@ -248,9 +227,8 @@
                 </div>
                
                 <div class="d-flex text-white justify-content-between text-muted">
-                   
-                    
-                    <div class="d-flex flex-column align-items-start gap-1">
+
+<div class="d-flex flex-column align-items-start gap-1">
                          <p class="mb-0 fs-14 text-white">Unsettled Amount</p>
                       <span class="text-warning fw-semibold">₹ {!! $unsettled_amount ?? '0.00' !!}</span>
                       
@@ -263,7 +241,7 @@
                               <i class="fs-14 fw-semibold ti ti-eye cursor-pointer text-white"
                         onclick="hideShowBalance(this,'holdWallet');"></i>
                         
-                             <i class="ti ti-info-circle cursor-pointer" onclick="navigate('/hold-wallet/ledger');"></i>
+                             <i class="ti ti-info-circle cursor-pointer" onclick="navigate('{{ route('hold-wallet.ledger') }}');"></i>
                         </div>
                      
                     </div>
@@ -271,9 +249,8 @@
                 </div>
                                 </div>
                                 </div>
-                                
-                                
-                                <div class="p-4 border-bottom border-block-end-dashed">
+
+<div class="p-4 border-bottom border-block-end-dashed">
                                     <p class="fs-15 mb-2 me-4 fw-semibold">Merchant Information :</p>
                                     <div class="text-muted">
                                         
@@ -299,14 +276,8 @@
                                         
                                     </div>
                                 </div>
-                                
-                                
-                                
-                              
-                                
-                                
-                               
-                            </div>
+
+</div>
                         </div>
 
         <div class="card custom-card">
@@ -357,10 +328,7 @@
             </div>
         </div>
 
-      
-
-
-    </div>
+</div>
 </div>
 <style>
     .cursor-pointer {
@@ -376,15 +344,14 @@
         
 $("#recentTxns").html('');
 $("#recentLogins").html('');
-$.get("/api/dashboard/analytics", {}, (data) => {
+$.get(@json(route('api.dashboard.analytics')), {}, (data) => {
     const totalTransactions = data.data.status.total_transactions;
     const successTransactions = data.data.status.success_transactions;
     const pendingTransactions = data.data.status.pending_transactions;
     const failedTransactions = parseInt(data.data.status.failed_transactions) + parseInt(data.data.status.expired_transactions);
     const processingTransactions = data.data.status.processing_transactions;
 
-    // Update HTML for amounts
-    $("#todaysCollection").html("₹" + data.data.today.collection);
+$("#todaysCollection").html("₹" + data.data.today.collection);
     $("#todaysPayout").html("₹" + data.data.today.payout);
     $("#todaysCharges").html("₹" + data.data.today.charges);
     
@@ -392,30 +359,23 @@ $.get("/api/dashboard/analytics", {}, (data) => {
     $("#totalPayout").html("₹" + data.data.total.payout);
     $("#totalCharges").html("₹" + data.data.total.charges);
 
-    // Update HTML for transaction counts
-    $("#totalTransactionCount").html(totalTransactions);
+$("#totalTransactionCount").html(totalTransactions);
     $("#successTransactionCount").html(successTransactions);
     $("#pendingTransactionCount").html(pendingTransactions);
     $("#failedTransactionCount").html(failedTransactions);
     $("#processingTransactionCount").html(processingTransactions);
 
-    // Calculate percentages
-    const successPercentage = totalTransactions > 0 ? ((successTransactions / totalTransactions) * 100).toFixed(2) : 0;
+const successPercentage = totalTransactions > 0 ? ((successTransactions / totalTransactions) * 100).toFixed(2) : 0;
     const pendingPercentage = totalTransactions > 0 ? ((pendingTransactions / totalTransactions) * 100).toFixed(2) : 0;
     const failedPercentage = totalTransactions > 0 ? ((failedTransactions / totalTransactions) * 100).toFixed(2) : 0;
     const processingPercentage = totalTransactions > 0 ? ((processingTransactions / totalTransactions) * 100).toFixed(2) : 0;
 
-    // Update HTML for percentages
-    $("#successTransactionProgress").attr("aria-valuenow", successPercentage).css("width", successPercentage + "%");
+$("#successTransactionProgress").attr("aria-valuenow", successPercentage).css("width", successPercentage + "%");
     $("#pendingTransactionProgress").attr("aria-valuenow", pendingPercentage).css("width", pendingPercentage + "%");
     $("#failedTransactionProgress").attr("aria-valuenow", failedPercentage).css("width", failedPercentage + "%");
     $("#processingTransactionProgress").attr("aria-valuenow", processingPercentage).css("width", processingPercentage + "%");
-    
-   
-    
-    
-    
-    let payin = [];
+
+let payin = [];
     let payout = [];
     data.data.weeklySummary.forEach((dat) => {
         payin.push({
@@ -430,16 +390,10 @@ $.get("/api/dashboard/analytics", {}, (data) => {
     });
     
     renderGraph(payin,payout);
-    
 
 });
 
-        
-
-
-        
-
-    }
+}
     
     function renderGraph(payin,payout)
     {
@@ -547,8 +501,7 @@ $.get("/api/dashboard/analytics", {}, (data) => {
         chart.render();
     }
 
-
-          function getBrowserIcon(browser)
+function getBrowserIcon(browser)
           {
               if(browser == "Chrome")
               {
@@ -590,9 +543,8 @@ $.get("/api/dashboard/analytics", {}, (data) => {
 <script class="afterLoadScript" type="plain/text">
 load();
 
-    
 </script>
 
-<?php if (!isset($_GET['turbo'])) {
-    echo view("footer", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

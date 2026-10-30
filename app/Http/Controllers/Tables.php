@@ -57,7 +57,6 @@ class Tables extends Controller
               $index,
               $transaction->name,
               $transaction->phone,
-              //$transaction->email,
               $transaction->txnid,
               $transaction->merchant_txnid,
               $transaction->rrn,
@@ -75,7 +74,6 @@ class Tables extends Controller
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalTransactions,
@@ -137,7 +135,6 @@ class Tables extends Controller
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalTransactions,
@@ -145,9 +142,8 @@ class Tables extends Controller
           'data' => $data
       ]);
     }
-    
-    
-    private function getStatusSpan($status) {
+
+private function getStatusSpan($status) {
        if($status == "Success") { return '<span class="badge bg-success-transparent">Success</span>'; } 
        if($status == "Pending") { return '<span class="badge bg-warning-transparent">Pending</span>'; } 
        if($status == "Failed") { return '<span class="badge bg-danger-transparent">Failed</span>'; } 
@@ -212,12 +208,11 @@ class Tables extends Controller
               $this->getStatusSpan($settlement->status ?? 'Pending'),
               $settlement->created_at ? date('Y-m-d H:i:s', strtotime($settlement->created_at)) : 'NA',
               ($settlement->status == "Success" && $settlement->updated_at) ? date('Y-m-d H:i:s', strtotime($settlement->updated_at)) : 'NA',
-              '<button onclick="navigate(\'/service/collection/settlements/'.$this->encrypt($settlement->id).'\')" class="btn btn-sm btn-primary-transparent"><i class="ti ti-list"></i>&nbsp;&nbsp;'.$totalTransactions.'</button>'
+              '<button onclick="navigate(\''.route('service.collection.settlement.transactions', ['any' => $this->encrypt($settlement->id)]).'\')" class="btn btn-sm btn-primary-transparent"><i class="ti ti-list"></i>&nbsp;&nbsp;'.$totalTransactions.'</button>'
           ];
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalSettlement,
@@ -278,9 +273,8 @@ class Tables extends Controller
       ]);
       
     }
-    
-    
-    public function wallet_transactions() {
+
+public function wallet_transactions() {
       $availableSearchKeys = ["type","txn_type","txnid","amount","opening","closing","remarks"];
       $request = request();
       $session = session();
@@ -323,7 +317,6 @@ class Tables extends Controller
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalWalletTransaction,
@@ -374,7 +367,6 @@ class Tables extends Controller
           $index++;
       }
 
-      // Return JSON response
       return response()->json([
           'draw' => $draw,
           'recordsTotal' => $totalWalletTransaction,

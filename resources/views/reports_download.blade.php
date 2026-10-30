@@ -1,7 +1,6 @@
-<?php if (!isset($_GET['turbo'])) {
-    $page = "download";
-    echo view("header", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'download'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -11,7 +10,6 @@
         <li class="breadcrumb-item active" aria-current="page"><i class="ti ti-download me-1 fs-15"></i>Download</li>
     </ol>
 </nav>
-
 
 <div class="card custom-card">
     <div class="card-header">
@@ -63,9 +61,8 @@
                 </select>
               </div>
             </div>
-            
-            
-        </div>
+
+</div>
         
         <button onclick="exportData(this);" class="btn btn-primary float-end mt-3"><i class="ti ti-download"></i>&nbsp;Download Report</button>
     </div>
@@ -93,24 +90,21 @@
         txnType: txnType
     });
 
-    location.href = '/api/export/report/download?' + params.toString();
+    location.href = @json(route('api.export.report.download')) + '?' + params.toString();
 }
 
-    
-    
-    function load(){
+function load(){
         
-        var start = moment().subtract(6, 'days'); // 6 days ago
-        var end = moment(); // today
+        var start = moment().subtract(6, 'days'); 
+        var end = moment(); 
 
         function cb(start, end) {
             $('#reportrange span').html(start.format('MMM D, YYYY') + ' - ' + end.format('MMM D, YYYY'));
             window.startDate = start.format("YYYY-MM-DD");
             window.endDate = end.format("YYYY-MM-DD");
         }
-    
-    
-        $('#reportrange').daterangepicker({
+
+$('#reportrange').daterangepicker({
             startDate: start,
             endDate: end,
             ranges: {
@@ -133,6 +127,6 @@
     load();
 </script>
 
-<?php if (!isset($_GET['turbo'])) {
-    echo view("footer", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

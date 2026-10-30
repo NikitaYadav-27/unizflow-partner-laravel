@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Libraries\Recaptcha;
 use App\Libraries\Validators;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class Auth extends Controller
 {
@@ -12,7 +13,7 @@ class Auth extends Controller
     {
         $session = session();
         if ($session->get('user_id')) {
-            return redirect('/user/dashboard');
+            return redirect()->route('dashboard');
         }
         return view('auth.login');
     }
@@ -21,7 +22,7 @@ class Auth extends Controller
     {
         $session = session();
         if ($session->get('user_id')) {
-            return redirect('/user/dashboard');
+            return redirect()->route('dashboard');
         }
         return view('auth.register');
     }
@@ -30,25 +31,17 @@ class Auth extends Controller
     {
         $session = session();
         if (!$session->get('user-registration-data')) {
-            return redirect('/');
+            return redirect()->route('home');
         }
         return view('auth.verify_registration');
     }
 
     public function register_user()
     {
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.7)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
-        $name = trim($input->name);
-        $email = trim($input->email);
-        $password = trim($input->password);
-        $phone = ltrim(preg_replace("/\D/", "", trim($input->phone)), '0');
+        $name = trim(request()->input('name', ''));
+        $email = trim(request()->input('email', ''));
+        $password = trim(request()->input('password', ''));
+        $phone = ltrim(preg_replace("/\D/", "", trim(request()->input('phone', ''))), '0');
 
         if (!Validators::name($name)) {
             return response()->json([
@@ -91,7 +84,7 @@ class Auth extends Controller
             "name" => strtoupper($name),
             "email" => strtolower($email),
             "phone" => $phone,
-            "password" => password_hash($password, PASSWORD_DEFAULT),
+            "password" => Hash::make($password),
             "merchant_id" => $this->generateMerchantId(),
         ]);
 
@@ -166,17 +159,10 @@ class Auth extends Controller
                 'message' => 'Registration Session not found',
             ], 401);
         }
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.7)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
+        $emailOtp = request()->input('email_otp');
 
         if (
-            !ctype_digit($input->email_otp) || strlen($input->email_otp) != 6
+            !ctype_digit((string) $emailOtp) || strlen((string) $emailOtp) != 6
         ) {
             return response()->json([
                 'status' => 'error',
@@ -191,7 +177,7 @@ class Auth extends Controller
             ], 400);
         }
 
-        if ($input->email_otp != $session->get("email_otp")) {
+        if ($emailOtp != $session->get("email_otp")) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Please Enter valid OTP',
@@ -220,7 +206,6 @@ class Auth extends Controller
             ], 409);
         }
 
-        //register user
         \App\Models\User::create([
             "name" => $name,
             "email" => $email,
@@ -251,26 +236,18 @@ class Auth extends Controller
     public function login_user()
     {
         $session = session();
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.7)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
-        $email = trim($input->email);
-        $password = trim($input->password);
-      if (app()->environment('local')) {
-            $lat = $input->location->lat ?? 26.9124;
-            $lon = $input->location->lon ?? 75.7873;
+        $email = trim(request()->input('email', ''));
+        $password = trim(request()->input('password', ''));
+        if (app()->environment('local')) {
+            $lat = request()->input('location.lat', 26.9124);
+            $lon = request()->input('location.lon', 75.7873);
         } else {
-            $lat = $input->location->lat ?? null;
-            $lon = $input->location->lon ?? null;
+            $lat = request()->input('location.lat');
+            $lon = request()->input('location.lon');
         }
-        $browser = $input->browser;
-        $device = $input->device;
-        $os = $input->os;
+        $browser = request()->input('browser');
+        $device = request()->input('device');
+        $os = request()->input('os');
 
         if (!Validators::email($email)) {
             return response()->json([
@@ -326,13 +303,13 @@ class Auth extends Controller
                 "log" => $lon,
                 "verified" => 0,
                 "user_id" => $userData['id'],
-                "session_id" => session_id()
+                "session_id" => session()->getId()
             ]);
 
             $loginAttemptId = $createdAttempt->id;
         }
 
-        if (!$userData || !password_verify($password, $userData['password'])) {
+        if (!$userData || !Hash::check($password, $userData['password'])) {
             if($userData){
               \App\Models\LoginAttempt::where("id", $loginAttemptId)->update([
                   "verified" => -1,
@@ -360,7 +337,7 @@ class Auth extends Controller
         }
 
         $login = new \App\Models\Login();
-        $session_id =  session_id();
+        $session_id = session()->getId();
         \App\Models\Login::create([
             "user_id" => $userData['id'],
             "ip" => request()->ip(),
@@ -374,9 +351,8 @@ class Auth extends Controller
             "phone_verified" => 0,
             "session_id" => $session_id
         ]);
-        
-        
-        $browserToken = request()->cookie('browser_token');
+
+$browserToken = request()->cookie('browser_token');
         if(strlen($browserToken) > 5){
             $loginBrowserModel = new \App\Models\LoginBrowser();
             $browser = $loginBrowserModel->findBrowserToken($browserToken);
@@ -408,8 +384,7 @@ class Auth extends Controller
             $message->to($userData['email'])->subject('Your OTP for Login - '.env("APP_NAME").' Account');
         });
 
-      
-        return response()->json([
+return response()->json([
             'status' => 'success',
             'otpRequired' => true,
             'message' => 'Login OTP sent successfully',
@@ -421,11 +396,11 @@ class Auth extends Controller
     {
         $session = session();
         $login = new \App\Models\Login();
-        $loginLog = $login->where('session_id', session_id())->orderBy('id', 'DESC')->where('verified', 0)
+        $loginLog = $login->where('session_id', session()->getId())->orderBy('id', 'DESC')->where('verified', 0)
         ->where('created_at', '>=', date("Y-m-d H:i:s", strtotime("-15 minutes")))
         ->first();
         if (!$loginLog) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         }
         $user = new User();
         $userData = $user->where('id', $loginLog['user_id'])->first();
@@ -433,17 +408,10 @@ class Auth extends Controller
     }
 
     public function verify_login_otp(){
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.7)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
+        $otp = request()->input('otp');
         $session = session();
         $login = new \App\Models\Login();
-        $loginLog = $login->where('session_id', session_id())->orderBy('id', 'DESC')->where('verified', 0)
+        $loginLog = $login->where('session_id', session()->getId())->orderBy('id', 'DESC')->where('verified', 0)
             ->where('created_at', '>=', date("Y-m-d H:i:s", strtotime("-15 minutes")))
             ->first();
         if (!$loginLog) {
@@ -460,9 +428,8 @@ class Auth extends Controller
             ], 401);
         }
 
-
-        if (
-            !ctype_digit($input->otp) || strlen($input->otp) != 6
+if (
+            !ctype_digit((string) $otp) || strlen((string) $otp) != 6
         ) {
             return response()->json([
                 'status' => 'error',
@@ -475,25 +442,23 @@ class Auth extends Controller
                 'message' => 'OTP Expired. Please resend OTP.',
             ], 400);
         }
-        if ($input->otp != $session->get("email_otp")) {
+        if ($otp != $session->get("email_otp")) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Please Enter valid OTP',
             ], 400);
         }
 
-        $emailVerified = $input->otp == $session->get("email_otp") ? 1 : 0;
+        $emailVerified = $otp == $session->get("email_otp") ? 1 : 0;
         $phoneVerified = 0;
 
-
-        \App\Models\Login::where("id", $loginLog['id'])->update([
+\App\Models\Login::where("id", $loginLog['id'])->update([
             "verified" => 1,
             "email_verified" => $emailVerified,
             "phone_verified" => $phoneVerified
         ]);
-        
-        
-        $loginBrowserModel = new \App\Models\LoginBrowser();
+
+$loginBrowserModel = new \App\Models\LoginBrowser();
         $browserToken = substr(bin2hex(random_bytes(30)), 0, 30);
         \App\Models\LoginBrowser::create([
            "user_id" => $loginLog['user_id'],
@@ -501,9 +466,8 @@ class Auth extends Controller
            "phone_verified" => $phoneVerified,
            "email_verified" => $emailVerified
         ]);
-        
-        
-        session()->put('user_id', $loginLog['user_id']);
+
+session()->put('user_id', $loginLog['user_id']);
         
         return response()->json([
             'status' => 'success',
@@ -511,27 +475,17 @@ class Auth extends Controller
         ], 200)->cookie("browser_token", $browserToken, 86400 / 60, "/", null, true, true);
     }
 
-
-    public function forgot_password()
+public function forgot_password()
     {
         $session = session();
         if ($session->get('user_id')) {
-            return redirect('/user/dashboard');
+            return redirect()->route('dashboard');
         }
         return view('auth.forgot_password');
     }
     
     public function send_reset_password_link() {
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.7)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
-        
-        $email = $input->email;
+        $email = request()->input('email');
         if(!Validators::email($email)){
             return response()->json([
                 'status' => 'error',
@@ -564,24 +518,23 @@ class Auth extends Controller
                'status' => 'success',
                'message' => 'Email Sent Successfully !',
         ], 200);
-        
-        
-    }
+
+}
     
     public function reset_password($token) {
         if(strlen($token) < 10) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         }
         $userModel = new \App\Models\User();
         $user = $userModel->where("reset_password_token", $token)->first();
         if(!isset($user['id'])) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         }
         $generateTime = $user['reset_password_token_time'];
         $currentTime = time();
         $hoursToExpire = 1;
         if (($currentTime - $generateTime) > ($hoursToExpire * 3600)) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         }
         $data = [];
         $data['user'] = $user;
@@ -589,15 +542,7 @@ class Auth extends Controller
     }
     
     public function update_password() {
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!($result->success && $result->score > 0.5)) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
-        $token = $input->token;
+        $token = request()->input('token');
         $userModel = new \App\Models\User();
         $user = $userModel->where("reset_password_token", $token)->first();
         if(!isset($user['id'])) {
@@ -616,8 +561,8 @@ class Auth extends Controller
             ], 401);
         }
         
-        $npassword = $input->npassword;
-        $cpassword = $input->cpassword;
+        $npassword = request()->input('npassword');
+        $cpassword = request()->input('cpassword');
         if(!Validators::password($npassword) || !Validators::password($cpassword)) {
             return response()->json([
                 'status' => 'error',
@@ -633,7 +578,7 @@ class Auth extends Controller
         }
         
         $userModel->where('id', $user['id'])->update([
-          "password" => password_hash($npassword, PASSWORD_DEFAULT)
+          "password" => Hash::make($npassword)
         ]);
         
         $token = strtolower(substr(str_shuffle(str_repeat('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)), 0, 50));
@@ -653,7 +598,7 @@ class Auth extends Controller
     {
         $session = session();
         $session->flush();
-        return redirect('/user/login');
+        return redirect()->route('login');
     }
 
     public function ad_login() {
@@ -664,10 +609,10 @@ class Auth extends Controller
             if ($user && isset($user["id"])) {
                 session()->put("user_id", $user["id"]);
                 $userModel->where('id', $user["id"])->update(["ad_token" => ""]);
-                return redirect('/user/dashboard');
+                return redirect()->route('dashboard');
             }
         }
-        return redirect('/user/login')->with('error', 'Invalid or expired login token.');
+        return redirect()->route('login')->with('error', 'Invalid or expired login token.');
     }
 
 }

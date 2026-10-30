@@ -1,8 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "topup"; echo view("header", get_defined_vars()); } 
-
-//print_r($banks);
-
-?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'topup'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -14,8 +12,7 @@
     </ol>
 </nav>
 
-
-    <div class="row mt-2">
+<div class="row mt-2">
         <div class="col-lg-4 mb-3">
             <div class="card custom-card">
                 <div class="card-header">
@@ -24,67 +21,63 @@
                 <div class="card-body px-0 py-0">
                     
  <div class="accordion accordion-primary rounded-0" id="accordionPrimaryExample">
-     
-     
-    <?php $index = 1; foreach($banks as $bank) :  ?>
+
+@forelse($banks as $bank)
     <div class="accordion-item rounded-0">
-        <h2 class="accordion-header rounded-0" id="headingPrimaryOne<?php echo $index; ?>">
+        <h2 class="accordion-header rounded-0" id="headingPrimaryOne{{ $loop->iteration }}">
             <button class="accordion-button rounded-0" type="button" data-bs-toggle="collapse"
-                data-bs-target="#collapsePrimaryOne<?php echo $index; ?>" aria-expanded="<?php echo $index == 1?"true":"false"?>"
-                aria-controls="collapsePrimaryOne<?php echo $index; ?>">
-                <?php echo $bank->name; ?>
+                data-bs-target="#collapsePrimaryOne{{ $loop->iteration }}" aria-expanded="{{ $loop->first ? 'true' : 'false' }}"
+                aria-controls="collapsePrimaryOne{{ $loop->iteration }}">
+                {{ $bank->name }}
             </button>
         </h2>
-        <div id="collapsePrimaryOne<?php echo $index; ?>" class="accordion-collapse collapse <?php echo $index == 1?"show":""?>"
-            aria-labelledby="headingPrimaryOne<?php echo $index; ?>"
+        <div id="collapsePrimaryOne{{ $loop->iteration }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}"
+            aria-labelledby="headingPrimaryOne{{ $loop->iteration }}"
             data-bs-parent="#accordionPrimaryExample">
             <div class="accordion-body">
                 <table>
                     <tr>
                         <td style="white-space: nowrap;">Account Name</td>
                         <td class="px-2">:</td>
-                        <td><?php echo $bank->account_holder_name; ?></td>
+                        <td>{{ $bank->account_holder_name }}</td>
                     </tr>
                     
                     <tr>
                         <td style="white-space: nowrap;">Account No</td>
                         <td class="px-2">:</td>
-                        <td><?php echo $bank->account_number; ?></td>
+                        <td>{{ $bank->account_number }}</td>
                     </tr>
                     
                     <tr>
                         <td style="white-space: nowrap;">IFSC Code</td>
                         <td class="px-2">:</td>
-                        <td><?php echo $bank->ifsc_code; ?></td>
+                        <td>{{ $bank->ifsc_code }}</td>
                     </tr>
                     
                      <tr>
                         <td style="white-space: nowrap;">Bank</td>
                         <td class="px-2">:</td>
-                        <td><?php echo $bank->bank; ?></td>
+                        <td>{{ $bank->bank }}</td>
                     </tr>
                     
                     <tr>
                         <td style="white-space: nowrap;">Branch</td>
                         <td class="px-2">:</td>
-                        <td><?php echo $bank->branch; ?></td>
+                        <td>{{ $bank->branch }}</td>
                     </tr>
                 </table>
             </div>
         </div>
     </div>
-    <?php $index++; endforeach; ?>
-    
-    <?php if($index == 1) : ?>
+    @empty
     <center>
         <p class="my-5">You don't have assigned Bank Account</p>
     </center>
-    <?php endif; ?>
+    @endforelse
 
 </div>    
-                        
-                     
-                </div>
+
+</div>
             </div>
         </div>
          <div class="col-lg-8 mb-3">
@@ -94,7 +87,7 @@
                        Topup History
                    </div>
                    
-                   <button class="btn btn-sm btn-primary py-1" onclick="navigate('/wallet/topup/add-request');"><i class="ti ti-circle-plus"></i>&nbsp;&nbsp;Add Request</button>
+                   <button class="btn btn-sm btn-primary py-1" onclick="navigate('{{ route('wallet.topup.add-request') }}');"><i class="ti ti-circle-plus"></i>&nbsp;&nbsp;Add Request</button>
                 </div>
                 <div class="card-body">
                     
@@ -123,8 +116,7 @@
                         placeholder="Search">
                 </div>
 
-
-            </div>
+</div>
         </div>
         
                     <div class="table-responsive">
@@ -155,8 +147,7 @@
     window.searchBy = "";
     window.searchValue = "";
 
-
-    function getTransactions() {
+function getTransactions() {
         window.dataTable = $("#dataTable").dataTable(
             {
                 "bFilter": false,
@@ -166,7 +157,7 @@
                 "paging": true,
                 "ordering" : false,
                 "ajax": {
-                    "url": "/api/tables/fund_requests",
+                    "url": @json(route('api.tables.fund-requests')),
                     "type": "GET",
                     "data": function (d) {
                         d.searchBy = window.searchBy;
@@ -185,7 +176,7 @@
 
     function changeSearchBy(value) {
         window.searchBy = value;
-        //refresh data
+        
         if (window.searchValue != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -194,7 +185,7 @@
 
     function changeSearchValue(value) {
         window.searchValue = value;
-        //refresh data
+        
         if (window.searchBy != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -206,5 +197,6 @@
     getTransactions();
 </script>
 
-
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

@@ -1,4 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "settlements"; echo view("header", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'settlements'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -8,13 +10,6 @@
         <li class="breadcrumb-item active" aria-current="page"><i class="ti ti-receipt me-1 fs-15"></i>Settlements</li>
     </ol>
 </nav>
-
- 
-
-
-              
-
-
 
 <div class="card">
     <div class="card-body">
@@ -45,8 +40,7 @@
                         placeholder="Search">
                 </div>
 
-
-               <div id="reportrange" class="form-control sm-w-100" style="width: min-content; white-space: nowrap;">
+<div id="reportrange" class="form-control sm-w-100" style="width: min-content; white-space: nowrap;">
                  <i class="ti ti-calendar"></i>&nbsp;
                  <span></span> <i class="fa fa-caret-down"></i>
                </div>
@@ -73,7 +67,7 @@
                         <th scope="col">Status</th>
                         <th scope="col">Create Time</th>
                         <th scope="col">Settled Time</th>
-                        <!--<th scope="col">To Time</th>-->
+                        
                         <th scope="col">Transactions</th>
                     </tr>
                 </thead>
@@ -83,12 +77,8 @@
             </table>
         </div>
 
-
-    </div>
 </div>
-
-
-
+</div>
 
 <script>
 
@@ -98,16 +88,14 @@
     window.startDate = "";
     window.endDate = "";
 
+function getTransactions() {
 
-    function getTransactions() {
-        
-        
-    var start = moment().subtract(6, 'days'); // 6 days ago
-    var end = moment(); // today
+var start = moment().subtract(6, 'days'); 
+    var end = moment(); 
 
     function cb(start, end) {
         $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
-       // renderTransactionsVolume(start, end);
+       
        window.startDate = start.format("YYYY-MM-DD");
        window.endDate = end.format("YYYY-MM-DD");
        window.dataTable.DataTable().ajax.reload();
@@ -130,11 +118,8 @@
      $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
      window.startDate = start.format("YYYY-MM-DD");
      window.endDate = end.format("YYYY-MM-DD");
-    // cb(start, end); 
-    
-    
-    
-        window.dataTable = $("#dataTable").dataTable(
+
+window.dataTable = $("#dataTable").dataTable(
             {
                 "bFilter": false,
                 "bLengthChange": false,
@@ -143,7 +128,7 @@
                 "paging": true,
                 "ordering" : false,
                 "ajax": {
-                    "url": "/api/tables/settlements",
+                    "url": @json(route('api.tables.settlements')),
                     "type": "GET",
                     "data": function (d) {
                         d.searchBy = window.searchBy;
@@ -164,7 +149,7 @@
 
     function changeSearchBy(value) {
         window.searchBy = value;
-        //refresh data
+        
         if (window.searchValue != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -173,7 +158,7 @@
 
     function changeSearchValue(value) {
         window.searchValue = value;
-        //refresh data
+        
         if (window.searchBy != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -192,7 +177,7 @@
             status: '',
             txnType: ''
         });
-        location.href = '/api/export/report/download?' + params.toString();
+        location.href = @json(route('api.export.report.download')) + '?' + params.toString();
     }
 
 </script>
@@ -217,7 +202,6 @@
     }
 </style>
 
-
-
-
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

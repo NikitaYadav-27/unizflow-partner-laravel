@@ -1,15 +1,9 @@
-<?php
-
- $first_date = new DateTime($txn['created_at']);
- $second_date = new DateTime(date("Y-m-d H:i:s"));
- 
- $difference = $first_date->diff($second_date);
-
- $timeRemain = $difference->i * 60;
-
- $timeRemain = 900 - $timeRemain;
-
-?>
+@php
+    $first_date = new DateTime($txn['created_at']);
+    $second_date = new DateTime(date("Y-m-d H:i:s"));
+    $difference = $first_date->diff($second_date);
+    $timeRemain = 900 - ($difference->i * 60);
+@endphp
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -216,7 +210,7 @@
       <div class="payment-container">
         <div class="header d-flex justify-content-between align-items-center">
           <div class="d-flex align-items-center">
-            <!-- Company Logo Placeholder -->
+            
             <img src="/assets/ridepay-logo-white.png" alt="PayQuick" class="logo me-3">
           </div>
           <div>
@@ -240,7 +234,7 @@
             <div class="upi-apps mt-4">
               <h6>Pay using popular UPI apps</h6>
               <div class="d-flex justify-content-center mt-3">
-                <!-- Add data attributes to each UPI app div -->
+                
                 <div class="upi-app" data-android-pkg="com.google.android.apps.nbu.paisa.user" data-ios-scheme="googlepay://" data-upi-url="
 																{!! htmlspecialchars($txn['intent']) !!}">
                   <img src="/assets/payment/google-pay-icon.png" alt="Google Pay">
@@ -269,22 +263,22 @@
                       const iosScheme = this.dataset.iosScheme;
                       const upiUrl = this.dataset.upiUrl;
                       let appUrl;
-                      // Detect platform
+                      
                       const isAndroid = /android/i.test(navigator.userAgent);
                       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                       if (isAndroid) {
-                        // Android Intent URL with package targeting
+                        
                         appUrl = `intent://${upiUrl.split('://')[1]}#Intent;package=${androidPkg};scheme=upi;end;`;
                       } else if (isIOS) {
-                        // iOS Deep Link
+                        
                         appUrl = upiUrl.replace('upi://', iosScheme);
                       } else {
-                        // Fallback for other platforms
+                        
                         appUrl = upiUrl;
                       }
-                      // Try to open app
+                      
                       window.location.href = appUrl;
-                      // Fallback to generic UPI if app not installed
+                      
                       setTimeout(() => {
                         if (!document.hidden) {
                           window.location.href = upiUrl;
@@ -334,13 +328,7 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Email</span>
-                <span class="detail-value">xxxx <?php 
-                                    $email = $txn['email'];
-                                    echo substr(explode("@", $email)[0],-4);
-                                    echo "@".explode("@", $email)[1];
-                                   
-                                 
-                                 ?> </span>
+                <span class="detail-value">{{ 'xxxx ' . substr(explode('@', $txn['email'] ?? '')[0] ?? '', -4) . '@' . (explode('@', $txn['email'] ?? '')[1] ?? '') }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Phone</span>
@@ -365,10 +353,9 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <script>
-      // Countdown Timer
 
-      function startCountdown() {
-        let duration = {!! $timeRemain !!}; // 15 minutes in seconds
+function startCountdown() {
+        let duration = {!! $timeRemain !!}; 
         const countdownElement = document.getElementById('countdown');
         const timer = setInterval(function() {
           const minutes = Math.floor(duration / 60);
@@ -381,7 +368,7 @@
           }
         }, 1000);
       }
-      // Display current date and time
+      
       function updateDateTime() {
         const now = new Date();
         const options = {
@@ -393,12 +380,12 @@
         };
         document.getElementById('current-time').textContent = now.toLocaleDateString('en-IN', options);
       }
-      // Initialize when document is ready
+      
       document.addEventListener('DOMContentLoaded', function() {
-          <?php if($txn['status'] == "Pending") :  ?>
+          @if($txn['status'] == "Pending")
           
           let interval = setInterval(() => {
-            $.post("/api/transactions/check-status",{
+            $.post(@json(route('api.transactions.check-status')),{
                 txnid: "{!! $encTxnId !!}"
             },(data) => {
                 if(data.status == "Success"){
@@ -419,21 +406,16 @@
           
          startCountdown();
          updateDateTime();
-         
-         
-         
-          
-          
-         
-         <?php else : ?>
-            <?php if($txn['status'] == "Success") : ?>
+
+          @else
+            @if($txn['status'] == "Success")
               success();
-            <?php elseif($txn['status'] == "Failed"): ?>
+            @elseif($txn['status'] == "Failed")
               failed();
-            <?php elseif($txn['status'] == "Expired"): ?>
+            @elseif($txn['status'] == "Expired")
               expired();
-            <?php endif; ?>
-         <?php endif; ?>
+            @endif
+          @endif
       });
       
       function expired() {

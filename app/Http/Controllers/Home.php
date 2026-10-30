@@ -2,7 +2,8 @@
 namespace App\Http\Controllers;
 use App\Libraries\Validators;
 use App\Libraries\Recaptcha;
-
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class Home extends Controller
 {
@@ -11,15 +12,15 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
             if($user['active'] == 0){
                 $session->flush();
-                return redirect('/user/login');
+                return redirect()->route('login');
             }
-            return redirect('/user/dashboard');
+            return redirect()->route('dashboard');
         }
     }
 
@@ -27,7 +28,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -48,7 +49,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -56,9 +57,8 @@ class Home extends Controller
             return view('upi_collection', $data);
         }
     }
-    
-    
-    public function download() {
+
+public function download() {
     $session = session();
     if (!$session->get('user_id')) {
         return response()->json([
@@ -67,14 +67,12 @@ class Home extends Controller
         ], 401);
     }
 
-    // Input validation remains the same
     $startDate = request()->query("startDate");
     $endDate = request()->query("endDate");
     $reportType = request()->query("reportType");
     $status = request()->query("status");
     $txnType = request()->query("txnType");
 
-    // Date format validation
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
         return response()->json([
             "status" => "error",
@@ -89,7 +87,6 @@ class Home extends Controller
         ], 400);
     }
 
-    // Report type validation
     if (!in_array($reportType, ["transactions", "settlements", "wallet", "wallet_ledger"])) {
         return response()->json([
             "status" => "error",
@@ -97,7 +94,6 @@ class Home extends Controller
         ], 400);
     }
 
-    // Status validation
     if (!in_array($status, ["", "Success", "Pending", "Failed", "Expired"])) {
         return response()->json([
             "status" => "error",
@@ -105,7 +101,6 @@ class Home extends Controller
         ], 400);
     }
 
-    // Transaction type validation
     if (!in_array($txnType, ["", "payin", "payout"])) {
         return response()->json([
             "status" => "error",
@@ -163,7 +158,6 @@ class Home extends Controller
 
     $filename = 'report_' . date('YmdHis') . '.csv';
 
-    // Define headers
     $headers = [
         'ID', 'Service', 'Name', 'Phone', 'Email', 'Transaction ID', 'UTR', 
         'Reference ID', 'Status', 'Amount', 'Charges', 'GST', 'Payee Name', 
@@ -251,7 +245,7 @@ class Home extends Controller
     public function reports_download() {
          $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -260,12 +254,11 @@ class Home extends Controller
         }
     }
 
-
-    public function payin_transactions()
+public function payin_transactions()
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -277,7 +270,7 @@ class Home extends Controller
     public function settlements() {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -289,7 +282,7 @@ class Home extends Controller
     public function hold_wallet_ledger(){
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -321,7 +314,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -333,7 +326,7 @@ class Home extends Controller
     public function profile(){
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -341,7 +334,6 @@ class Home extends Controller
             $keyModel = new \App\Models\Key();
             $key = $keyModel->findUser($user['id']);
             if(!isset($key['id'])){
-                //Generate Encryption Keys
                 $aesKey = bin2hex(random_bytes(32));
                 $iv = base64_encode(random_bytes(12));
                 
@@ -361,7 +353,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -374,7 +366,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -386,7 +378,7 @@ class Home extends Controller
     public function add_fund_request(){
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -400,7 +392,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -418,13 +410,12 @@ class Home extends Controller
                 'message' => 'Unauthorized'
             ], 401);
         }
-        $input = (object) json_decode(request()->getContent());
-        $bankId = $input->bank;
-        $mode = $input->mode;
-        $amount = $input->amount;
-        $remarks = $input->remarks;
-        $receipt = $input->receipt;
-        $utr = $input->utr;
+        $bankId = request()->input('bank');
+        $mode = request()->input('mode');
+        $amount = request()->input('amount');
+        $remarks = request()->input('remarks');
+        $receipt = request()->input('receipt');
+        $utr = request()->input('utr');
         
         if (!Validators::amount($amount)) {
             return response()->json([
@@ -528,15 +519,13 @@ class Home extends Controller
             'status' => 'success',
             'message' => 'Request Submitted Successfully !'
         ], 200);
-        
-        
-    }
 
+}
 
-    public function change_password(){
+public function change_password(){
          $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -545,24 +534,23 @@ class Home extends Controller
         }
     }
 
-
-    public function settlement_transactions($encId){
+public function settlement_transactions($encId){
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $settlementId = openssl_decrypt(hex2bin($encId),'AES-256-CBC', env("encryption.key"), OPENSSL_RAW_DATA, substr(hash('sha256', env("encryption.key")), 0, 16));
             
             if(!($settlementId > 0)) {
-                return redirect('/service/collection/settlements');
+                return redirect()->route('service.collection.settlements');
             }
             $settlementModel = new \App\Models\Settlement();
             $settlement = $settlementModel->find($settlementId);
             if(!isset($settlement['id'])){
-                return redirect('/service/collection/settlements');
+                return redirect()->route('service.collection.settlements');
             }
             if($settlement['user_id'] != $session->get('user_id')) {
-                 return redirect('/service/collection/settlements');
+                 return redirect()->route('service.collection.settlements');
             }
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -576,7 +564,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -584,7 +572,6 @@ class Home extends Controller
             $keyModel = new \App\Models\Key();
             $key = $keyModel->findUser($user['id']);
             if(!isset($key['id'])){
-                //Generate Encryption Keys
                 $aesKey = bin2hex(random_bytes(32));
                 $iv = base64_encode(random_bytes(12));
                 
@@ -600,12 +587,11 @@ class Home extends Controller
         }
     }
 
-
-    public function webhook()
+public function webhook()
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -618,7 +604,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));
@@ -681,12 +667,11 @@ class Home extends Controller
             ], 401);
         }
 
-        $input = (object) json_decode(request()->getContent());
-        $name = $input->customer_name;
-        $phone = $input->customer_phone;
-        $email = $input->customer_email;
-        $amount = $input->amount;
-        $remarks = $input->remarks;
+        $name = request()->input('customer_name');
+        $phone = request()->input('customer_phone');
+        $email = request()->input('customer_email');
+        $amount = request()->input('amount');
+        $remarks = request()->input('remarks');
         if (!Validators::name($name)) {
             return response()->json([
                 'status' => 'error',
@@ -729,8 +714,7 @@ class Home extends Controller
             ], 400);
         }
 
-
-        $user = new \App\Models\User();
+$user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
         
         $transaction = new \App\Models\Transaction();
@@ -760,10 +744,8 @@ class Home extends Controller
                 'message' => 'Pipe Limit is exceed. Please contact to Administrator'
             ], 400);
         }
-        
-            
-        
-        $settingsModel = new \App\Models\Settings();
+
+$settingsModel = new \App\Models\Settings();
         if(!$settingsModel->isPayinEnabled()){
              return response()->json([
                 'status' => 'error',
@@ -801,7 +783,6 @@ class Home extends Controller
             $orderId = "ORD" . time() . rand(100, 999);
             $mockRrn = "BYPASS" . date('YmdHis') . rand(100, 999);
         } elseif ($loggedInUser['payin_provider'] == 1) {
-            //Solitpay
             $provider = new \App\Libraries\Solitpay();
             $result = $provider->generateQr($txnId, $name, $phone, $email, $amount);
             
@@ -812,7 +793,6 @@ class Home extends Controller
                 $orderId = $result->data->transaction->txnid;
             }
         } elseif ($loggedInUser['payin_provider'] == 3) {
-            // Zenova Integration
             $provider = new \App\Libraries\Zenova();
             $result = $provider->generateQr($txnId, $loggedInUser['merchant_id'], '12355', $name, $amount);
             
@@ -823,9 +803,8 @@ class Home extends Controller
                 $orderId = $result->txnID ?? '';
             } 
         }
-        
 
-        if(!$tresult) {
+if(!$tresult) {
             \Illuminate\Support\Facades\DB::table('error_logs')->insert([
                 'type' => 'PAYIN',
                 'txnid' => $txnId,
@@ -893,26 +872,17 @@ class Home extends Controller
            ]
        ], 200);
 
-
-    }
+}
     
     public function make_payout_old() {
         $session = session();
-        $input = (object) json_decode(request()->getContent());
-        // $result = Recaptcha::verifyV3Captcha($input->captcha);
-        // if (!$result->success) {
-        //     return response()->json([
-        //         'status' => 'error',
-        //         'message' => 'Unable to resolve captcha.',
-        //     ], 401);
-        // }
-        $name = $input->customer_name;
-        $phone = $input->customer_phone;
-        $amount = $input->amount;
-        $account_number = $input->account_number;
-        $ifsc_code = $input->ifsc_code;
-        $bank_name = $input->bank_name;
-        $remarks = $input->remark;
+        $name = request()->input('customer_name');
+        $phone = request()->input('customer_phone');
+        $amount = request()->input('amount');
+        $account_number = request()->input('account_number');
+        $ifsc_code = request()->input('ifsc_code');
+        $bank_name = request()->input('bank_name');
+        $remarks = request()->input('remark');
         
         if (!Validators::name($name)) {
             return response()->json([
@@ -949,16 +919,14 @@ class Home extends Controller
             ], 400);
         }
 
-        //check remark length should not exceed 100 characters
         if (strlen($remarks) > 100) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Remarks should not exceed 100 characters'
             ], 400);
         }
-        
-        
-        $user = new \App\Models\User();
+
+$user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
         
         $settingsModel = new \App\Models\Settings();
@@ -1002,9 +970,8 @@ class Home extends Controller
                 'message' => 'Your Today\'s payout Limit is exceed.'
             ], 400);
         }
-        
-        
-        $charge = new \App\Models\Charge();
+
+$charge = new \App\Models\Charge();
         $charge = $charge->payout($amount, $loggedInUser['package'], $loggedInUser['payout_provider']);
 
         if (!$charge) {
@@ -1023,7 +990,6 @@ class Home extends Controller
             ], 400);
         }
         
-        //add transaction
         $txnId = $this->generateTxnId();
        
         $transaction->create([
@@ -1044,47 +1010,35 @@ class Home extends Controller
             'remarks' => $remarks,
             'payout_provider' => $loggedInUser['payout_provider']
         ]);
-        
-        
-        return response()->json([
+
+return response()->json([
            'status' => 'success',
            'message' => 'Transaction Initiated Successfully !'
         ], 200);
-        
-        
-        
-    }
+
+}
 
     public function make_payout()
     {
         $session = session();
-        $input = (object) json_decode(request()->getContent());
+        $name = request()->input('customer_name');
+        $phone = request()->input('customer_phone');
+        $amount = request()->input('amount');
+        $account_number = request()->input('account_number');
+        $ifsc_code = request()->input('ifsc_code');
+        $bank_name = request()->input('bank_name');
+        $remarks = request()->input('remark');
 
-        $name = $input->customer_name;
-        $phone = $input->customer_phone;
-        $amount = $input->amount;
-        $account_number = $input->account_number;
-        $ifsc_code = $input->ifsc_code;
-        $bank_name = $input->bank_name;
-        $remarks = $input->remark;
-
-        // ────────────────────────
-        // BASIC VALIDATION
-        // ────────────────────────
-        if (!Validators::name($name)) return $this->fail("Invalid name");
+if (!Validators::name($name)) return $this->fail("Invalid name");
         if (!Validators::accountNumber($account_number)) return $this->fail("Invalid Account Number");
         if (!Validators::ifsc($ifsc_code)) return $this->fail("Invalid IFSC Code");
         if (!Validators::phone($phone)) return $this->fail("Invalid phone number");
         if (!Validators::amount($amount)) return $this->fail("Invalid amount");
         if (strlen($remarks) > 100) return $this->fail("Remarks should not exceed 100 characters");
 
-        // ────────────────────────
-        // FETCH LOGGED USER
-        // ────────────────────────
-        $userModel = new \App\Models\User();
+$userModel = new \App\Models\User();
         $loggedInUser = $userModel->find($session->get("user_id"));
 
-        // Check payout enabled
         $settingsModel = new \App\Models\Settings();
         if (!$settingsModel->isPayoutEnabled()) {
             return $this->fail("Payout Service is disabled. Please contact the Administrator");
@@ -1094,10 +1048,7 @@ class Home extends Controller
             return $this->fail("Payout Service is disabled for your account. Please contact Administrator");
         }
 
-        // ────────────────────────
-        // LIMIT CHECK
-        // ────────────────────────
-        $transaction = new \App\Models\Transaction();
+$transaction = new \App\Models\Transaction();
         $start = date('Y-m-d') . " 00:00:00";
         $end   = date('Y-m-d') . " 23:59:59";
 
@@ -1118,10 +1069,7 @@ class Home extends Controller
             return $this->fail("Today's payout limit exceeded.");
         }
 
-        // ────────────────────────
-        // CHARGES
-        // ────────────────────────
-        $chargeModel = new \App\Models\Charge();
+$chargeModel = new \App\Models\Charge();
         $charge = $chargeModel->payout($amount, $loggedInUser['package'], $loggedInUser['payout_provider']);
 
         if (!$charge) return $this->fail("Slabs are not defined for this amount");
@@ -1132,7 +1080,6 @@ class Home extends Controller
             return $this->fail("Insufficient Funds");
         }
 
-        // ──────────────────────── 
         $txnId = $this->generateTxnId();
         $isBypass = env('PAYMENT_BYPASS', true);
 
@@ -1237,8 +1184,7 @@ class Home extends Controller
         return response()->json(['status' => 'error', 'message' => $msg]);
     }
 
-    
-    public function get_dashboard_data()
+public function get_dashboard_data()
     {
         $session = session();
         if (!$session->get('user_id')) {
@@ -1309,9 +1255,8 @@ class Home extends Controller
             return $txnId;
         }
     }
-    
-    
-    public function regenerate_api_key_send_otp()
+
+public function regenerate_api_key_send_otp()
     {
         $session = session();
         if (!$session->get('user_id')) {
@@ -1349,9 +1294,8 @@ class Home extends Controller
             'message' => 'OTP sent successfully.'
         ]);
     }
-    
-    
-    public function verify_otp_and_update_api_key()
+
+public function verify_otp_and_update_api_key()
     {
         $session = session();
         if (!$session->get('user_id')) {
@@ -1398,9 +1342,8 @@ class Home extends Controller
             'message' => 'API Key regenerated and updated successfully.'
         ], 200);
     }
-    
-    
-    public function update_webhook_send_otp($type = null) {
+
+public function update_webhook_send_otp($type = null) {
         $session = session();
         if (!$session->get('user_id')) {
             return response()->json([
@@ -1410,11 +1353,10 @@ class Home extends Controller
         }
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        $input = json_decode(request()->getContent());
-        $url = request()->input('url') ?? ($input->url ?? null);
+        $url = request()->input('url');
         
         if (!$type) {
-            $type = request()->input('type') ?? ($input->type ?? null);
+            $type = request()->input('type');
         }
 
         $type = strtolower((string) $type);
@@ -1461,9 +1403,8 @@ class Home extends Controller
         ]);
 
     }
-    
-    
-    public function verify_otp_and_update_webhook_url(){
+
+public function verify_otp_and_update_webhook_url(){
         $session = session();
         if (!$session->get('user_id')) {
             return response()->json([
@@ -1524,8 +1465,7 @@ class Home extends Controller
         
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        $input = (object) json_decode(request()->getContent());
-        $ip = $input->ip;
+        $ip = request()->input('ip');
         
         if(!Validators::ip($ip)) {
             return response()->json([
@@ -1693,16 +1633,8 @@ class Home extends Controller
         }
         
         $lastSentTime = $session->get('ipdl_otp_time');
-        
-        // if ($lastSentTime && (time() - $lastSentTime) < 600) {
-        //     $remaining = 600 - (time() - $lastSentTime);
-        //     return response()->json([
-        //         'status' => "error",
-        //         'message' => "OTP already sent. Try again After 10 minutes"
-        //     ], 400);
-        // }
 
-        $otp = random_int(100000, 999999);
+$otp = random_int(100000, 999999);
 
         $session->put([
             'ipid' => $id,
@@ -1742,9 +1674,8 @@ class Home extends Controller
                 'message' => 'Invalid OTP'
             ], 400);
         }
-        
-        
-        if (!$storedOtp || !$otpTime || (time() - $otpTime) > 600) {
+
+if (!$storedOtp || !$otpTime || (time() - $otpTime) > 600) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'OTP expired or not found. Please try again.'
@@ -1796,12 +1727,11 @@ class Home extends Controller
         }
         $user = new \App\Models\User();
         $loggedInUser = $user->find($session->get('user_id'));
-        $input = (object) json_decode(request()->getContent());
-        $password = $input->password;
-        $npassword = $input->npassword;
-        $cpassword = $input->cpassword;
+        $password = request()->input('password');
+        $npassword = request()->input('npassword');
+        $cpassword = request()->input('cpassword');
         
-        if(!password_verify($password, $loggedInUser['password'])){
+        if(!Hash::check($password, $loggedInUser['password'])){
             return response()->json([
                    'status' => 'error',
                    'message' => "Current password not Matched"
@@ -1823,7 +1753,7 @@ class Home extends Controller
         }
         
         $user->where('id', $loggedInUser['id'])->update([
-          "password" => password_hash($npassword, PASSWORD_DEFAULT)
+          "password" => Hash::make($npassword)
         ]);
         
          return response()->json([
@@ -1841,10 +1771,9 @@ class Home extends Controller
                 'message' => 'Unauthorized'
             ], 401);
         }
-        $input = (object) json_decode(request()->getContent());
-        $account = $input->account;
-        $ifsc = $input->ifsc;
-        $name = $input->name;
+        $account = request()->input('account');
+        $ifsc = request()->input('ifsc');
+        $name = request()->input('name');
         if ($name === '' || strlen($name) < 3) {
             return response()->json([
                 'status'  => 'error',
@@ -1873,7 +1802,6 @@ class Home extends Controller
         
         $isBypass = env('PAYMENT_BYPASS', true);
         
-        //check if already any pending account (skip lock if in bypass)
         if(!$isBypass && \Illuminate\Support\Facades\DB::table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
             return response()->json([
                 'status'  => 'error',
@@ -1881,7 +1809,6 @@ class Home extends Controller
             ], 422);
         }
         
-        // If bypass, mark as Approved immediately, otherwise Pending
         $bankStatus = $isBypass ? "Approved" : "Pending";
 
         \Illuminate\Support\Facades\DB::table("users_bank")->insert([
@@ -1908,19 +1835,14 @@ class Home extends Controller
         $ifsc = strtoupper(trim($ifsc));
         $url = "https://ifsc.razorpay.com/" . urlencode($ifsc);
         
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
-        $resp = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        $response = Http::withoutVerifying()
+            ->timeout(5)
+            ->connectTimeout(3)
+            ->withUserAgent('Mozilla/5.0')
+            ->get($url);
 
-        if ($resp && $httpCode == 200) {
-            $data = json_decode($resp, true);
+        if ($response->successful()) {
+            $data = $response->json();
             if (is_array($data) && !empty($data['BANK'])) {
                 return $data;
             }
@@ -1954,8 +1876,7 @@ class Home extends Controller
         ];
     }
 
-    
-    private function sendEmail($email, $subject, $message){
+private function sendEmail($email, $subject, $message){
         try {
             \Illuminate\Support\Facades\Mail::raw($message, function($mail) use ($email, $subject) {
                 $mail->to($email)->subject($subject);
@@ -1969,7 +1890,7 @@ class Home extends Controller
     {
         $session = session();
         if (!$session->get('user_id')) {
-            return redirect('/user/login');
+            return redirect()->route('login');
         } else {
             $user = new \App\Models\User();
             $user = $user->find($session->get('user_id'));

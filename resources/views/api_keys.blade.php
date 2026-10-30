@@ -1,4 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "key"; echo view("header", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'key'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -27,18 +29,16 @@
                     <button onclick="copyKey('{!! $user['merchant_id']; !!}',this);" class="btn text-primary border-primary" type="button"><i class="ti ti-copy"></i></button>
                 </div>
             </div>
-            
-                
-            <div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
+
+<div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
                 <label class="mb-1">Client Secret</label>
                 <div class="input-group">
                     <input type="text" class="form-control" readonly value="{!! $user['api_access_key']; !!}">
                     <button onclick="copyKey('{!! $user['api_access_key']; !!}',this);" class="btn text-primary border-primary" type="button"><i class="ti ti-copy"></i></button>
                 </div>
             </div>
-            
-            
-             <div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
+
+<div class="form-group col-lg-12 col-sm-12 col-md-12 mb-2">
                 <label class="mb-1">Encryption Key</label>
                 <div class="input-group">
                     <input type="text" class="form-control" readonly value="{!! $key['aes_key']; !!}">
@@ -61,10 +61,8 @@
             </div>
         </div>
     </div>
-    
-   
-</div>
 
+</div>
 
 <script>
     function regenerateKey()
@@ -80,7 +78,7 @@
          cancelButtonText: 'Cancel'
        }).then((result) => {
          if (result.isConfirmed) {
-            $.get("/api/regenerate-api-key/send-otp",{},(data) => {
+            $.get(@json(route('api.regenerate-api-key.send-otp')),{},(data) => {
                 
                    Swal.fire({
                      title: 'Enter OTP',
@@ -106,10 +104,10 @@
                    }).then((result) => {
                      if (result.isConfirmed) {
                         const otp = result.value;
-                        $.post("/api/regenerate-api-key/verify-otp",{ otp : otp },(data) => {
+                        $.post(@json(route('api.regenerate-api-key.verify-otp')),{ otp : otp },(data) => {
                             
                                 notify("success",data.message,() => {
-                                    navigate('/settings/api-keys');
+                                    navigate(@json(route('settings.api-keys')));
                                 });
                           
                         }).fail((xhr) => {
@@ -146,4 +144,6 @@
         border-color: rgb(var(--primary-rgb)) !important;
     }
 </style>
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

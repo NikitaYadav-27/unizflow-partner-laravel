@@ -1,4 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "profile"; echo view("header", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'profile'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -22,7 +24,7 @@
                 <h6 class="card-title"><i class="ti ti-lock"></i> Change Password</h6>
             </div>
             <div class="card-body">
-                <form action="/api/user/change_password" method="POST" novalidate>
+                <form action="{{ route('api.user.change-password') }}" method="POST" novalidate>
                     <div class="form-group mb-2">
                       <label class="mb-1">Current Password <span class="text-primary">*</span></label>
                       <input type="password" name="password"  validation="password" class="form-control" placeholder="Enter Current Password" required>
@@ -49,7 +51,6 @@
    
 </div>
 
-
 <script>
 
     function onRequestResponse(response){
@@ -62,4 +63,6 @@
     }
 </script>
 
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

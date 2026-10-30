@@ -7,7 +7,7 @@
   <title>UnizFlow API Documentation</title>
   <style>
     :root {
-      /* Primitive Color Tokens */
+      
       --color-white: rgba(255, 255, 255, 1);
       --color-black: rgba(0, 0, 0, 1);
       --color-cream-50: rgba(252, 252, 249, 1);
@@ -203,8 +203,7 @@
       min-height: 100vh;
     }
 
-    /* Header */
-    .header {
+.header {
       position: fixed;
       top: 0;
       left: 0;
@@ -289,8 +288,7 @@
       height: 36px;
     }
 
-    /* Sidebar */
-    .sidebar {
+.sidebar {
       position: fixed;
       top: 64px;
       left: 0;
@@ -363,8 +361,7 @@
       color: #16a34a;
     }
 
-    /* Main Content */
-    .main-content {
+.main-content {
       margin-left: 280px;
       margin-top: 64px;
       padding: var(--space-32);
@@ -419,8 +416,7 @@
       font-size: var(--font-size-xs);
     }
 
-    /* Cards */
-    .card {
+.card {
       background: var(--color-surface);
       border: 1px solid var(--color-card-border);
       border-radius: var(--radius-lg);
@@ -443,8 +439,7 @@
       color: var(--color-primary);
     }
 
-    /* Tables */
-    .params-table {
+.params-table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: var(--space-16);
@@ -491,8 +486,7 @@
       font-size: var(--font-size-xs);
     }
 
-    /* Code Blocks */
-    .code-header {
+.code-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -548,8 +542,7 @@
       margin: 0;
     }
 
-    /* Tabs */
-    .tabs {
+.tabs {
       display: flex;
       gap: var(--space-4);
       border-bottom: 1px solid var(--color-border);
@@ -585,8 +578,7 @@
       display: block;
     }
 
-    /* Info Box */
-    .info-box {
+.info-box {
       padding: var(--space-16);
       border-radius: var(--radius-base);
       margin-bottom: var(--space-16);
@@ -616,8 +608,7 @@
       gap: var(--space-8);
     }
 
-    /* Auth Section */
-    .auth-credential {
+.auth-credential {
       display: flex;
       align-items: center;
       gap: var(--space-12);
@@ -662,8 +653,7 @@
       background: var(--color-secondary-hover);
     }
 
-    /* Status Codes */
-    .status-code-list {
+.status-code-list {
       list-style: none;
     }
 
@@ -704,8 +694,7 @@
       color: var(--color-error);
     }
 
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
+@media (max-width: 768px) {
       .mobile-menu-btn {
         display: flex;
         align-items: center;
@@ -754,8 +743,7 @@
       }
     }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar {
+::-webkit-scrollbar {
       width: 8px;
       height: 8px;
     }
@@ -777,60 +765,19 @@
 
 <body>
   <div class="app-container">
-    <!-- Header -->
+    
     <header class="header">
       <div class="header-left">
         <div class="logo">
-          <a href="/" class="header-logo">
+          <a href="{{ route('home') }}" class="header-logo">
             <img src="{!! env("logo"); !!}" alt="logo">
           </a>
         </div>
       </div>
-      <!-- <div class="header-right">
-        <div class="stats-badge">3 Endpoints</div>
-        <button
-          class="theme-toggle"
-          id="themeToggle"
-          aria-label="Toggle theme">
-          <svg
-            width="20"
-            height="20"
-            viewbox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-        </button>
-        <button
-          class="mobile-menu-btn"
-          id="mobileMenuBtn"
-          aria-label="Toggle menu">
-          <svg
-            width="20"
-            height="20"
-            viewbox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-      </div> -->
+      
     </header>
 
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar">
       <div class="sidebar-section">
         <div class="sidebar-title">Getting Started</div>
         <a href="#" class="nav-item active" data-section="getting-started">
@@ -934,9 +881,8 @@
       </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Getting Started -->
+<main class="main-content">
+      
       <section class="content-section active" id="getting-started">
         <div class="section-header">
           <h1 class="section-title">Getting Started with UnizFlow API</h1>
@@ -989,8 +935,7 @@
         </div>
       </section>
 
-      <!-- Generate Token -->
-      <section class="content-section" id="generate-token">
+<section class="content-section" id="generate-token">
         <div class="section-header">
           <h1 class="section-title">Generate Token</h1>
           <p class="section-description">
@@ -1074,8 +1019,7 @@
         </div>
       </section>
 
-      <!-- Authentication -->
-      <section class="content-section" id="authentication">
+<section class="content-section" id="authentication">
         <div class="section-header">
           <h1 class="section-title">Authentication</h1>
           <p class="section-description">
@@ -1182,8 +1126,7 @@
         </div>
       </section>
 
-      <!-- Create UPI Order -->
-      <section class="content-section" id="upi-orders-create">
+<section class="content-section" id="upi-orders-create">
         <div class="section-header">
           <h1 class="section-title">Create UPI Order</h1>
           <p class="section-description">
@@ -1431,8 +1374,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/orders/create' \
         </div>
       </section>
 
-      <!-- Check Status -->
-      <section class="content-section" id="check-status">
+<section class="content-section" id="check-status">
         <div class="section-header">
           <h1 class="section-title">Check Transaction Status</h1>
           <p class="section-description">
@@ -1636,8 +1578,7 @@ curl --location 'https://partner.unizflow.com/api/v1/orders/check-status' \
         </div>
       </section>
 
-      <!-- Initiate Payout -->
-      <section class="content-section" id="payout-initiate">
+<section class="content-section" id="payout-initiate">
         <div class="section-header">
           <h1 class="section-title">Initiate UPI Payout</h1>
           <p class="section-description">
@@ -1896,8 +1837,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
         </div>
       </section>
 
-      <!-- Status Codes -->
-      <section class="content-section" id="status-codes">
+<section class="content-section" id="status-codes">
         <div class="section-header">
           <h1 class="section-title">HTTP Status Codes &amp; Errors</h1>
           <p class="section-description">
@@ -2040,7 +1980,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
   </div>
 
   <script>
-    // Navigation
+    
     const navItems = document.querySelectorAll(".nav-item");
     const sections = document.querySelectorAll(".content-section");
     const sidebar = document.getElementById("sidebar");
@@ -2051,36 +1991,29 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
         e.preventDefault();
         const sectionId = item.dataset.section;
 
-        // Update active nav item
-        navItems.forEach((nav) => nav.classList.remove("active"));
+navItems.forEach((nav) => nav.classList.remove("active"));
         item.classList.add("active");
 
-        // Show corresponding section
-        sections.forEach((section) => section.classList.remove("active"));
+sections.forEach((section) => section.classList.remove("active"));
         document.getElementById(sectionId).classList.add("active");
 
-        // Close mobile menu
-        sidebar.classList.remove("mobile-open");
+sidebar.classList.remove("mobile-open");
 
-        // Scroll to top
-        window.scrollTo({
+window.scrollTo({
           top: 0,
           behavior: "smooth"
         });
       });
     });
 
-    // Mobile menu toggle
-    mobileMenuBtn.addEventListener("click", () => {
+mobileMenuBtn.addEventListener("click", () => {
       sidebar.classList.toggle("mobile-open");
     });
 
-    // Theme toggle
-    const themeToggle = document.getElementById("themeToggle");
+const themeToggle = document.getElementById("themeToggle");
     let currentTheme = "light";
 
-    // Check system preference
-    if (
+if (
       window.matchMedia &&
       window.matchMedia("(prefers-color-scheme: dark)").matches
     ) {
@@ -2095,27 +2028,23 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
       );
     });
 
-    // Tab switching
-    function switchTab(event, tabId) {
+function switchTab(event, tabId) {
       const tabButton = event.target;
       const tabContainer = tabButton.parentElement;
       const contentContainer = tabContainer.nextElementSibling.parentElement;
 
-      // Update tab buttons
-      tabContainer.querySelectorAll(".tab").forEach((tab) => {
+tabContainer.querySelectorAll(".tab").forEach((tab) => {
         tab.classList.remove("active");
       });
       tabButton.classList.add("active");
 
-      // Update tab content
-      contentContainer.querySelectorAll(".tab-content").forEach((content) => {
+contentContainer.querySelectorAll(".tab-content").forEach((content) => {
         content.classList.remove("active");
       });
       document.getElementById(tabId).classList.add("active");
     }
 
-    // Copy to clipboard
-    function copyToClipboard(elementId, button) {
+function copyToClipboard(elementId, button) {
       const element = document.getElementById(elementId);
       const text = element.textContent || element.innerText;
 
@@ -2131,8 +2060,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
       });
     }
 
-    // Copy code block
-    function copyCode(codeId, button) {
+function copyCode(codeId, button) {
       const codeBlock = document.getElementById(codeId);
       const text = codeBlock.textContent;
 
@@ -2147,8 +2075,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
       });
     }
 
-    // Toggle mask for sensitive data
-    function toggleMask(elementId, button) {
+function toggleMask(elementId, button) {
       const element = document.getElementById(elementId);
       element.classList.toggle("masked");
       button.textContent = element.classList.contains("masked") ?
@@ -2156,8 +2083,7 @@ curl --location 'https://partner.unizflow.com/api/v1/upi/payout/initiate' \
         "Hide";
     }
 
-    // Make functions available globally
-    window.switchTab = switchTab;
+window.switchTab = switchTab;
     window.copyToClipboard = copyToClipboard;
     window.copyCode = copyCode;
     window.toggleMask = toggleMask;

@@ -5,8 +5,7 @@
 
 <head>
 
-    <!-- Meta Data -->
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Reset Password - {!! env('app.title') !!}</title>
@@ -17,7 +16,6 @@
     {!! view("includes/css"); !!}
 
 </head>
-
 
 <body class="bg-white">
 
@@ -62,8 +60,7 @@
                         <div class="card col-xxl-9 col-lg-9 col-md-9 col-sm-12">
                             <div class="card-body p-5">
 
-
-                                <div class="d-flex  justify-content-between align-items-center mb-4">
+<div class="d-flex  justify-content-between align-items-center mb-4">
                                     <img src="{!! e(env('logo')) !!}" alt="logo"
                                         style="width: auto; height: 70px;" class="desktop-logo">
                                     <div class="d-flex flex-column">
@@ -71,12 +68,8 @@
                                        <p class="text-muted mb-0 fs-10">Reset Your Password.</p>
                                     </div>
                                 </div>
-                                
-                               
 
-                                
-                                
-                                <form action="/api/auth/reset-password/update" novalidate method="POST" captcha="true">
+<form action="{{ route('api.auth.reset-password.update') }}" novalidate method="POST" captcha="true">
                                     <div class="row">
                                         
                                         <div class="form-group mb-2">
@@ -100,22 +93,16 @@
                                                 <div class="invalid-feedback"></div>
                                             
                                         </div>
-                                        
-                                        
-                                       
 
-
-                                        <div class="col-xl-12 d-grid mt-2">
+<div class="col-xl-12 d-grid mt-2">
                                             <button type="submit" id="loginBtn" class="btn btn-lg btn-primary rounded-pill">Update Password</button>
                                         </div>
                                         
                                          <div class="col-xl-12 d-grid mt-3">
-                                            <p class="text-center">Password Remembered ? <a class="text-primary cursor-pointer" onclick="navigate('/user/login',true)">Login</a></p>
+                                            <p class="text-center">Password Remembered ? <a class="text-primary cursor-pointer" onclick="navigate('{{ route('login') }}',true)">Login</a></p>
                                         </div>
-                                        
-                                      
-                                        
-                                    </div>
+
+</div>
                                 </form>
                             </div>
                         </div>
@@ -148,9 +135,8 @@
             }
         }
 
-
-        function onRequestResponse(response) {
-          navigate("/user/login",true,() => {
+function onRequestResponse(response) {
+          navigate('{{ route('login') }}',true,() => {
               notify("success",response.message);
           });
         }
@@ -161,19 +147,15 @@
            if (btn) { btn.disabled = false; btn.innerHTML = 'Update Password'; }
         }
 
-
 </script>
 
+<style>
 
-    <style>
-    
-
-        .card.custom-card {
+.card.custom-card {
             width: auto;
         }
 
-        /* css for devices width less than 768px */
-        @media screen and (max-width: 768px) {
+@media screen and (max-width: 768px) {
             .col-sm-0 {
                 display: none !important;
             }
@@ -185,7 +167,7 @@
         }
         
         .form-control{
-            /*padding: 12px 20px;*/
+            
             border-radius: 13px;
             font-size: 15px;
         }
@@ -220,9 +202,7 @@
         }
     </style>
 
-
-    <?php echo view('includes/js', get_defined_vars()); ?>
-
+@include('includes.js')
 
 </body>
 

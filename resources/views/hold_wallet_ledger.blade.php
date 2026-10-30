@@ -1,5 +1,6 @@
-<?php if (!isset($_GET['turbo'])) { $page = "ledger"; echo view("header", get_defined_vars()); } ?>
-
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'ledger'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -9,8 +10,6 @@
         <li class="breadcrumb-item active" aria-current="page"><i class="ti ti-file-text me-1 fs-15"></i>Ledger</li>
     </ol>
 </nav>
-
-
 
 <div class="card">
     <div class="card-body">
@@ -39,8 +38,7 @@
                         placeholder="Search">
                 </div>
 
-
-            </div>
+</div>
         </div>
 
         <div class="table-responsive">
@@ -63,12 +61,8 @@
             </table>
         </div>
 
-
-    </div>
 </div>
-
-
-
+</div>
 
 <script>
 
@@ -76,8 +70,7 @@
     window.searchBy = "";
     window.searchValue = "";
 
-
-    function getTransactions() {
+function getTransactions() {
         window.dataTable = $("#dataTable").dataTable(
             {
                 "bFilter": false,
@@ -87,7 +80,7 @@
                 "paging": true,
                 "ordering" : false,
                 "ajax": {
-                    "url": "/api/tables/hold-wallet-transaction",
+                    "url": @json(route('api.tables.hold-wallet-transaction')),
                     "type": "GET",
                     "data": function (d) {
                         d.searchBy = window.searchBy;
@@ -106,7 +99,7 @@
 
     function changeSearchBy(value) {
         window.searchBy = value;
-        //refresh data
+        
         if (window.searchValue != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -115,7 +108,7 @@
 
     function changeSearchValue(value) {
         window.searchValue = value;
-        //refresh data
+        
         if (window.searchBy != "") {
             window.dataTable.DataTable().ajax.reload();
         }
@@ -144,6 +137,6 @@
     }
 </style>
 
-
-
-<?php if (!isset($_GET['turbo'])) { echo view("footer", get_defined_vars()); } ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

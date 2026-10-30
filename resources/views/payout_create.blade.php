@@ -1,9 +1,6 @@
-<?php if (!isset($_GET['turbo'])) {
-    $page = "payout";
-    echo view("header", get_defined_vars());
-} ?>
-
-
+@if (!request()->query->has('turbo'))
+    @include('header', ['page' => 'payout'])
+@endif
 
 <nav aria-label="breadcrumb" class="my-4">
     <ol class="breadcrumb breadcrumb-style2 mb-0">
@@ -15,9 +12,6 @@
     </ol>
 </nav>
 
-
-
-
 <div class="row">
     <div class="col-lg-8 col-md-12 col-sm-12 mb-2">
         <div class="card custom-card h-100 mb-2">
@@ -25,7 +19,7 @@
                 <h5 class="card-title"><i class="ti ti-cash me-1 fs-15"></i> Make Payout</h5>
             </div>
             <div class="card-body">
-                <form action="/api/payout/make" method="POST" novalidate captcha="true">
+                <form action="{{ route('api.payout.make') }}" method="POST" novalidate captcha="true">
                     <div class="row">
                         <div class="col-lg-4">
                             <div class="form-group mb-2">
@@ -49,9 +43,7 @@
                             </div>
                         </div>
 
-
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Account Number <span class="text-primary">*</span></label>
 
@@ -85,8 +77,7 @@
                             </div>
                         </div>
 
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Bank <span class="text-primary">*</span></label>
                                 <input type="text" readonly name="bank_name" id="bank_name"
@@ -95,8 +86,7 @@
                             </div>
                         </div>
 
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Amount <span class="text-primary">*</span></label>
 
@@ -106,9 +96,7 @@
                             </div>
                         </div>
 
-
-
-                        <div class="col-lg-4">
+<div class="col-lg-4">
                             <div class="form-group mb-2">
                                 <label class="mb-1">Remark </label>
 
@@ -119,15 +107,10 @@
                             </div>
                         </div>
 
-              
-                       
-
-
-                    </div>
+</div>
                     <div class="d-flex justify-content-end align-items-end mt-5">
-                        <!--<div class="g-recaptcha" id="v2-widget"></div>-->
 
-                    <button class="btn btn-primary float-end mt-3" type="submit"><i
+<button class="btn btn-primary float-end mt-3" type="submit"><i
                             class="ti ti-arrow-up-right"></i>&nbsp;Make Payout</button>
                     </div>
                      
@@ -144,13 +127,10 @@
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush" id="recentTxns">
 
-
-
-                   <?php foreach((new \App\Models\Transaction())
-    ->where("service", "payout")
+@foreach(\App\Models\Transaction::where("service", "payout")
     ->where("user_id", $user['id'])
     ->orderBy("id", "DESC")
-    ->limit(5)->get() as $txn) :  ?>
+    ->limit(5)->get() as $txn)
             
                     <li class="list-group-item border-top-0 border-start-0 border-end-0">
                         <a href="javascript:void(0);">
@@ -164,42 +144,32 @@
                                 </div>
                                 <div class="text-end ">
                                     <p class="mb-0 fs-12 fw-semibold">₹ {!! $txn['amount'] !!}</p>
-                                    <span class="badge bg-<?php 
-                                    if($txn['status'] == "Success"){
-                                        echo "success";
-                                    }elseif($txn['status'] == "Pending"){
-                                        echo "warning";
-                                    }if($txn['status'] == "Failed"){
-                                        echo "danger";
-                                    }if($txn['status'] == "Processing"){
-                                        echo "info";
-                                    }
-                                    
-                                    ?>-transparent">{!! $txn['status'] !!}</span>
+                                    @php
+                                        $badgeColor = match($txn['status']) {
+                                            'Success' => 'success',
+                                            'Pending' => 'warning',
+                                            'Failed' => 'danger',
+                                            'Processing' => 'info',
+                                            default => 'secondary'
+                                        };
+                                    @endphp
+                                    <span class="badge bg-{{ $badgeColor }}-transparent">{!! $txn['status'] !!}</span>
                                 </div>
                             </div>
                         </a>
                     </li>
 
-                 <?php endforeach; ?>
+                 @endforeach
 
-                    
-
-
-
-
-                </ul>
+</ul>
             </div>
         </div>
 
     </div>
 
-
-    
 </div>
 
 {!! view("includes/receipt") !!}
-
 
 <script>
     function ifsc_check(input) {
@@ -227,36 +197,28 @@
         }
     }
 
-   
-    
-    function onRequestResponse(response) {
+function onRequestResponse(response) {
        notify("success",response.message,() => {
-           navigate('/service/payout/create');
+           navigate(@json(route('service.payout.create')));
        });
        try{document.querySelector("form").reset();}catch(e){}
-       //grecaptcha.reset(window.v2WidgetId);
+       
     }
 
     function onRequestError(error) {
        notify("error",error.responseJSON.message);
-       //grecaptcha.reset(window.v2WidgetId);
+       
     }
     
     function load(){
-        //  window.v2WidgetId = grecaptcha.render('v2-widget', {
-        //       'sitekey': '{!! env("recaptchav2.key") !!}'
-        //  });
 
-    }
+}
 </script>
-
 
 <script class="afterLoadScript" type="plain/text">
 load();
 </script>
 
-
-
-<?php if (!isset($_GET['turbo'])) {
-    echo view("footer", get_defined_vars());
-} ?>
+@if (!request()->query->has('turbo'))
+    @include('footer')
+@endif

@@ -113,7 +113,7 @@
         let btnText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'; 
-        $.post('/api/transaction/info',{
+        $.post(@json(route('api.transaction.info')),{
             txnid : txnid
         },(data) => {
             data = data.data;
@@ -142,16 +142,7 @@
             notify("error",xhr.responseJSON.message);
         });
     }
-    
-    // function downloadReceipt()
-    // {
-    //     html2canvas(document.querySelector("#receipt")).then(canvas => {
-    //       const link = document.createElement('a');
-    //       link.download = 'transaction_receipt.png';
-    //       link.href = canvas.toDataURL();
-    //       link.click();
-    //   });
-    // }
+
 </script>
 <style>
     .receipt-container {

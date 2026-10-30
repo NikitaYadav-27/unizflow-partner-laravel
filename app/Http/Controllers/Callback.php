@@ -25,7 +25,6 @@ class Callback extends Controller
         $transaction = $transactionModel->findTxnByMerchantId($data->txnReference);
         if(isset($transaction['status']) && in_array($transaction['status'],["Pending"])) {
             if($data->txnStatus == "Success" && round($transaction['amount']) == round($data->paid_amount)) {
-                //transaction successfull
                 $utr = $data->rrn;
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Success",
@@ -36,11 +35,8 @@ class Callback extends Controller
                   "rrn" => $utr
                 ]);
 
-                // Payin funds remain unsettled until Admin/AutoSettlement settles them to Wallet or Bank.
-                // Wallet is NOT immediately credited here to prevent premature usage and double payout.
-                $this->sendWebhook($transaction['id']);
+$this->sendWebhook($transaction['id']);
             }elseif($data->txnStatus == "Failed"){
-                //transaction failed
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Failed",
                   "txn_complete_time" => date("Y-m-d H:i:s"),
@@ -75,7 +71,6 @@ class Callback extends Controller
         $transaction = $transactionModel->findTxnByMerchantId($data->txnReference);
         if(isset($transaction['status']) && in_array($transaction['status'],["Pending", "Processing"])) {
             if($data->txnStatus == "Success") {
-                //transaction successfull
                 $utr = $data->rrn;
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Success",
@@ -86,14 +81,12 @@ class Callback extends Controller
 
                 $this->sendWebhook($transaction['id']);
             }elseif($data->txnStatus == "Failed"){
-                //transaction failed
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Failed",
                   "txn_complete_time" => date("Y-m-d H:i:s"),
                 ]);
                 $this->sendWebhook($transaction['id']);
             }elseif($data->txnStatus == "Expired"){
-                //transaction expired
                 $transactionModel->where('id', $transaction['id'])->update([
                   "status" => "Expired",
                 ]);
@@ -120,7 +113,6 @@ class Callback extends Controller
         $raw = request()->getContent();
         $data = json_decode($raw);
 
-        // Log every callback (for debugging / audit)
         $transactionResponseModel = new \App\Models\Transactionres();
         $transactionResponseModel->create([
             "txnid" => $data->txnID ?? 'UNKNOWN',
@@ -129,7 +121,6 @@ class Callback extends Controller
             "webhook_ip" => request()->ip()
         ]);
 
-        // Validate required fields
         if (empty($data->txnID) || empty($data->status)) {
             return response()->json([
                 "isSuccess" => false,
@@ -143,7 +134,6 @@ class Callback extends Controller
 
         if ($transaction && isset($transaction['status']) && $transaction['status'] == "Pending") {
 
-            // When status = 200, it means Success in Zenova
             if ($data->status == 200 && round($transaction['amount']) == round($data->payerAmount)) {
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Success",
@@ -154,11 +144,8 @@ class Callback extends Controller
                     "rrn" => $data->BankRRN ?? ''
                 ]);
 
-                // Payin funds remain unsettled until Admin/AutoSettlement settles them to Wallet or Bank.
-                // Wallet is NOT immediately credited here to prevent premature usage and double payout.
-                $this->sendWebhook($transaction['id']);
+$this->sendWebhook($transaction['id']);
             } else {
-                // Transaction failed or mismatch
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Failed",
                     "txn_complete_time" => date("Y-m-d H:i:s"),
@@ -168,7 +155,6 @@ class Callback extends Controller
             }
         }
 
-        // Send Zenova expected response
         return response()->json([
             "isSuccess" => true,
             "message" => "Successfully Insert",
@@ -176,13 +162,11 @@ class Callback extends Controller
         ], 200);
     }
 
-    
-    public function zenova_payout()
+public function zenova_payout()
     {
         $raw = request()->getContent();
         $data = json_decode($raw);
 
-        // Log raw callback
         $transactionResponseModel = new \App\Models\Transactionres();
         $transactionResponseModel->create([
             "txnid" => $data->txnid ?? 'UNKNOWN',
@@ -192,12 +176,11 @@ class Callback extends Controller
         ]);
 
         $transactionModel = new \App\Models\Transaction();
-        $transaction = $transactionModel->findTxnByMerchantId($data->txnid); // use txnid from callback
+        $transaction = $transactionModel->findTxnByMerchantId($data->txnid);
 
         if (isset($transaction['status']) && in_array($transaction['status'], ["Pending", "Processing"])) {
 
             if (strtolower($data->status) === "success") {
-                // Transaction successful
                 $utr = $data->rrn ?? $data->BankRRN ?? '';
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Success",
@@ -211,7 +194,6 @@ class Callback extends Controller
                 $this->sendWebhook($transaction['id']);
 
             } elseif (strtolower($data->status) === "failed") {
-                // Transaction failed
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Failed",
                     "txn_complete_time" => date("Y-m-d H:i:s"),
@@ -221,7 +203,6 @@ class Callback extends Controller
                 $this->sendWebhook($transaction['id']);
 
             } elseif (strtolower($data->status) === "expired") {
-                // Transaction expired
                 $transactionModel->where('id', $transaction['id'])->update([
                     "status" => "Expired",
                     "txn_complete_time" => date("Y-m-d H:i:s")
@@ -230,7 +211,6 @@ class Callback extends Controller
             }
         }
 
-        // Respond to Zenova
         return response()->json([
             "isSuccess" => true,
             "message" => "Successfully Insert",
