@@ -30,7 +30,7 @@ class ProcessTxn extends Command
         if ($transaction && $transaction['debited'] == 1 && $transaction['processed'] == 0 && $transaction['service'] == "payout") {
             $transactionModel->where('id', $transaction['id'])->update(["processed" => 1]);
 
-            if (env('PAYMENT_BYPASS', true)) {
+            if (env('PAYMENT_BYPASS', false)) {
                 $utr = 'UTR' . date('YmdHis') . rand(100, 999);
                 $transactionModel->where('id', $transaction['id'])->update([
                     "reference_id" => "REF" . time() . rand(100, 999),
@@ -47,6 +47,10 @@ class ProcessTxn extends Command
                 $this->process_with_solitpay($transaction);
             } elseif ($transaction['payout_provider'] == 4) {
                 $this->process_with_zenova($transaction);
+            } elseif (in_array($transaction['payout_provider'], [13])) {
+                $this->process_with_pikelpoint($transaction);
+            } elseif (in_array($transaction['payout_provider'], [12, 13])) {
+                $this->process_with_pikelpoint($transaction);
             }
         }
 
@@ -132,6 +136,55 @@ class ProcessTxn extends Command
 
         $transactionResponseModel = new Transactionres();
         $request = $zenova->getRequest();
+        $transactionResponseModel->create([
+            "txnid" => $transaction['txnid'],
+            "type" => "request",
+            "data" => json_encode($request)
+        ]);
+
+        $transactionResponseModel->create([
+            "txnid" => $transaction['txnid'],
+            "type" => "creation",
+            "data" => json_encode($result)
+        ]);
+    }
+
+    private function process_with_pikelpoint($transaction)
+    {
+        $transactionModel = new Transaction();
+        $userModel = new User();
+        $user = $userModel->find($transaction['user_id']);
+
+        $pikelpoint = new \App\Libraries\Pikelpoint();
+        $result = $pikelpoint->makePayout(
+            $transaction['txnid'],
+            $transaction['name'],
+            $transaction['phone'],
+            $transaction['amount'],
+            $transaction['account_number'],
+            $transaction['ifsc_code'],
+            $user['email'] ?? '',
+            $transaction['bank_name'] ?? 'Bank'
+        );
+
+        if (isset($result->isSuccess) && $result->isSuccess == true) {
+            $transactionModel->where('id', $transaction['id'])->update([
+                "reference_id" => $result->gateway_id ?? $transaction['txnid'],
+                "rrn" => $result->utr ?? 'NA',
+                "status" => $result->txnStatus ?? "Pending"
+            ]);
+        } else {
+            $respMessage = $result->message ?? "Payout failed";
+            $transactionModel->where('id', $transaction['id'])->update([
+                "status" => "Failed",
+                "reason" => $respMessage,
+                "txn_complete_time" => date("Y-m-d H:i:s")
+            ]);
+            $this->sendWebhook($transaction['id']);
+        }
+
+        $transactionResponseModel = new Transactionres();
+        $request = $pikelpoint->getRequest();
         $transactionResponseModel->create([
             "txnid" => $transaction['txnid'],
             "type" => "request",

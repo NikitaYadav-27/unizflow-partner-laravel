@@ -774,7 +774,7 @@ $settingsModel = new \App\Models\Settings();
         $referenceId = "";
         $orderId = "";
         $txnId = $this->generateTxnId();
-        $isBypass = env('PAYMENT_BYPASS', true);
+        $isBypass = env('PAYMENT_BYPASS', false);
 
         if ($isBypass) {
             $tresult = true;
@@ -802,7 +802,7 @@ $settingsModel = new \App\Models\Settings();
                 $referenceId = $result->txnID ?? '';
                 $orderId = $result->txnID ?? '';
             } 
-        } elseif ($loggedInUser['payin_provider'] == 11 || (isset($providerRow['gateway']) && strtolower($providerRow['gateway']) === 'pikelpoint')) {
+        } elseif ($loggedInUser['payin_provider'] == 12 || (isset($providerRow['gateway']) && strtolower($providerRow['gateway']) === 'pikelpoint')) {
             $provider = new \App\Libraries\Pikelpoint();
             $result = $provider->generateQr($txnId, $name, $phone, $email, $amount);
             
@@ -847,8 +847,8 @@ if(!$tresult) {
             'remarks' => $remarks,
             'payin_provider' => $loggedInUser['payin_provider'],
             'merchant_txnid' => $txnId,
-            'payee_name' => $isBypass ? 'Bypass Test' : null,
-            'payee_vpa' => $isBypass ? 'mockpay@upi' : null,
+            'payee_name' => !empty($data->name) ? $data->name : 'Unknown',
+            'payee_vpa' => $isBypass ? 'mockpay@upi' : 'Unknown',
             'txn_complete_time' => $isBypass ? date('Y-m-d H:i:s') : null,
             'success_at' => $isBypass ? date('Y-m-d H:i:s') : null
         ]);
@@ -1091,7 +1091,7 @@ $transaction = new \App\Models\Transaction();
         }
 
         $txnId = $this->generateTxnId();
-        $isBypass = env('PAYMENT_BYPASS', true);
+        $isBypass = env('PAYMENT_BYPASS', false);
 
         if ($isBypass) {
             $newBalance = number_format(($loggedInUser['wallet'] - $netAmount), 2, '.', '');
@@ -1158,7 +1158,7 @@ $transaction = new \App\Models\Transaction();
         $utr = '';
         $status = 'Pending';
 
-        if ($loggedInUser['payout_provider'] == 12 || (isset($payoutProviderRow['gateway']) && strtolower($payoutProviderRow['gateway']) === 'pikelpoint')) {
+        if ($loggedInUser['payout_provider'] == 13|| (isset($payoutProviderRow['gateway']) && strtolower($payoutProviderRow['gateway']) === 'pikelpoint')) {
             $provider = new \App\Libraries\Pikelpoint();
             $result = $provider->makePayout($txnId, $name, $phone, $amount, $account_number, $ifsc_code, $loggedInUser['email'] ?? '', $bank_name);
             if (isset($result->isSuccess) && $result->isSuccess) {
@@ -1826,7 +1826,7 @@ if (!$storedOtp || !$otpTime || (time() - $otpTime) > 600) {
         $bank = $ifscData['BANK'] ?? 'Bank';
         $branch = $ifscData['BRANCH'] ?? 'Main Branch';
         
-        $isBypass = env('PAYMENT_BYPASS', true);
+        $isBypass = env('PAYMENT_BYPASS', false);
         
         if(!$isBypass && \Illuminate\Support\Facades\DB::table('users_bank')->where('user_id', $user_id)->where('status', 'Pending')->count() != 0){
             return response()->json([

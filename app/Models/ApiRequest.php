@@ -19,7 +19,7 @@ class ApiRequest extends Model
     }
     
     public function isReqIdExists($reqId) {
-        return $this->select('1')->where('reqid', $reqId)->limit(1)->first() !== null;
+        return $this->where('reqid', $reqId)->exists();
     }
 
 }

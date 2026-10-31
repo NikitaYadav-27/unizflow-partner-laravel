@@ -13,11 +13,11 @@ class Charge extends Model
     public function payin(float $amount, int $packageId, int $providerId)
     {
         $packageSlab = DB::table('package_slabs')
-            ->where('service', 'payin')
-            ->where('package_id', $packageId)
-            ->where('min_amount', '<=', $amount)
-            ->where('max_amount', '>=', $amount)
-            ->first();
+    ->where('service', 'payin')
+    ->where('package_id', $packageId)
+    ->whereRaw('CAST(min_amount AS DECIMAL(15,2)) <= ?', [$amount])
+    ->whereRaw('CAST(max_amount AS DECIMAL(15,2)) >= ?', [$amount])
+    ->first();
 
         if (!$packageSlab) {
             return false;
@@ -36,8 +36,8 @@ class Charge extends Model
         $packageSlab = DB::table('package_slabs')
             ->where('service', 'payout')
             ->where('package_id', $packageId)
-            ->where('min_amount', '<=', $amount)
-            ->where('max_amount', '>=', $amount)
+->whereRaw('CAST(min_amount AS DECIMAL(15,2)) <= ?', [$amount])
+->whereRaw('CAST(max_amount AS DECIMAL(15,2)) >= ?', [$amount])
             ->first();
 
         if (!$packageSlab) {

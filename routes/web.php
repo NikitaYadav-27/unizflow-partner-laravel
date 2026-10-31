@@ -92,8 +92,8 @@ Route::match(['get', 'post'], '/api/v1/cb/internal/payout/solitpay/webhook', [Ca
 Route::match(['get', 'post'], '/api/v1/cb/internal/payin/zenova/webhook', [Callback::class, 'zenova_payin']);
 Route::match(['get', 'post'], '/api/v1/cb/internal/payout/zenova/webhook', [Callback::class, 'zenova_payout']);
 
-Route::match(['get', 'post'], '/api/v1/cb/internal/payin/pikelpoint/webhook', [Callback::class, 'pikelpoint_payin']);
-Route::match(['get', 'post'], '/api/v1/cb/internal/payout/pikelpoint/webhook', [Callback::class, 'pikelpoint_payout']);
+Route::match(['get', 'post', 'options'], '/api/v1/cb/internal/payin/pikelpoint/webhook', [Callback::class, 'pikelpoint_payin']);
+Route::match(['get', 'post', 'options'], '/api/v1/cb/internal/payout/pikelpoint/webhook', [Callback::class, 'pikelpoint_payout']);
 
 Route::get('generate-token', [Api::class, 'testToken']);
 

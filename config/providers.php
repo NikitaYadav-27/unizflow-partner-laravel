@@ -24,6 +24,8 @@ return [
         'payout_url' => env('PIKELPOINT_PAYOUT_URL', 'https://api.pikelpoint.com'),
         'token' => env('PIKELPOINT_TOKEN', ''),
         'webhook_secret' => env('PIKELPOINT_WEBHOOK_SECRET', ''),
+        'payin_webhook_secret' => env('PIKELPOINT_PAYIN_WEBHOOK_SECRET', env('PIKELPOINT_WEBHOOK_SECRET', '')),
+        'payout_webhook_secret' => env('PIKELPOINT_PAYOUT_WEBHOOK_SECRET', env('PIKELPOINT_WEBHOOK_SECRET', '')),
     ],
 
 ];

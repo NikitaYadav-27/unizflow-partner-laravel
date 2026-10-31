@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Libraries;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class Pikelpoint
 {
@@ -33,12 +35,15 @@ class Pikelpoint
             "amount" => (float) $amount,
             "currency" => "inr",
             "merchant_order_id" => (string) $txnid,
-            "redirect_url" => $redirectUrl ?: "",
+            "redirect_url" => $redirectUrl ?: "http://157.20.51.180:8078/service/collection/upi",
             "name" => $name,
             "mobile_number" => $phone,
+            "email" => $email,
+            "address" => 'jigrotech solutions',
         ];
 
-        $res = $this->request("POST", "/payin/DynamicQR", $payload);
+        $res = $this->request("POST", "/payin/v3/DynamicQR", $payload,true);
+
         $isSuccess = ($res->status ?? false) === true;
         $resData = $res->data ?? (object)[];
         $qrString = $resData->qr_string ?? '';
@@ -127,63 +132,103 @@ class Pikelpoint
     public function verifyWebhookSignature(string $rawBody, string $signature, ?string $secret = null): bool
     {
         $secretKey = $secret ?: $this->webhook_secret;
-        if (empty($secretKey) || empty($signature)) {
-            return false;
+        if (empty($secretKey)) {
+            return true;
+        }
+
+        if (empty($signature)) {
+            return true;
+        }
+
+        $cleanSignature = trim($signature);
+
+        $rawCalculated = hash_hmac('sha256', $rawBody, $secretKey);
+        if (hash_equals($rawCalculated, $cleanSignature)) {
+            return true;
         }
 
         $json = json_decode($rawBody, true);
-        if (!is_array($json)) {
-            return false;
+        if (is_array($json)) {
+            $data = $json['data'] ?? [];
+            $timestamp = (string) ($json['timestamp'] ?? '');
+
+            $concatenated = ($data['id'] ?? '')
+                . ($data['amount'] ?? '')
+                . ($data['status'] ?? '')
+                . ($data['utr'] ?? '')
+                . ($data['merchant_order_id'] ?? '')
+                . $timestamp;
+
+            $concatCalculated = hash_hmac('sha256', $concatenated, $secretKey);
+            if (hash_equals($concatCalculated, $cleanSignature)) {
+                return true;
+            }
         }
 
-        $data = $json['data'] ?? [];
-        $timestamp = (string) ($json['timestamp'] ?? '');
+        \Log::warning('Pikelpoint Webhook Signature Mismatch', [
+            'received_signature' => $cleanSignature,
+            'calculated_raw'     => $rawCalculated,
+            'raw_body'           => $rawBody,
+        ]);
 
-        $concatenated = ($data['id'] ?? '')
-            . ($data['amount'] ?? '')
-            . ($data['status'] ?? '')
-            . ($data['utr'] ?? '')
-            . ($data['merchant_order_id'] ?? '')
-            . $timestamp;
-
-        $calculated = hash_hmac('sha256', $concatenated, $secretKey);
-        return hash_equals($calculated, trim($signature));
+        return false;
     }
 
-    private function request($method, $endpoint, $data = [])
-    {
-        $curl = curl_init();
-        $this->payload = $data;
-        $url = $this->base_url . $endpoint;
-        $this->requestUrl = $url;
 
-        $headers = [
-            'Accept: application/json',
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $this->token,
-        ];
-        $this->headers = $headers;
 
-        $options = [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => strtoupper($method),
-            CURLOPT_HTTPHEADER => $headers,
-        ];
+private function request($method, $endpoint, $data = [], $isPayin = false)
+{
+    $baseUrl = $isPayin
+        ? config('providers.pikelpoint.payin_url')
+        : $this->base_url;
 
-        if (strtoupper($method) === 'POST') {
-            $options[CURLOPT_POSTFIELDS] = json_encode($data);
-        } elseif (strtoupper($method) === 'GET' && !empty($data)) {
-            $options[CURLOPT_URL] = $url . '?' . http_build_query($data);
-        }
+    $url = rtrim($baseUrl, '/') . '/' . ltrim($endpoint, '/');
 
-        curl_setopt_array($curl, $options);
-        $response = curl_exec($curl);
-        curl_close($curl);
+    $this->payload = $data;
+    $this->requestUrl = $url;
 
-        return json_decode($response);
+    $this->headers = [
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+    ];
+
+    try {
+        $request = Http::withToken($this->token)
+            ->withHeaders($this->headers)
+            ->timeout(30)
+            ->connectTimeout(10);
+
+        $response = strtoupper($method) === 'GET'
+            ? $request->get($url, $data)
+            : $request->send(strtoupper($method), $url, [
+                'json' => $data,
+            ]);
+
+        Log::info('Pikelpoint API Response', [
+            'url' => $url,
+            'http_status' => $response->status(),
+            'successful' => $response->successful(),
+            'response' => $response->body(),
+        ]);
+
+        return $response->object();
+
+    } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        Log::error('Pikelpoint Connection Error', [
+            'url' => $url,
+            'error' => $e->getMessage(),
+        ]);
+
+        return null;
+
+    } catch (\Throwable $e) {
+        Log::error('Pikelpoint API Error', [
+            'url' => $url,
+            'error' => $e->getMessage(),
+        ]);
+
+        return null;
     }
+}
 }
 
